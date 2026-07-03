@@ -7,7 +7,7 @@ Dotfiles und Bootstrap-Scripts für Remote-Server (Debian/Ubuntu).
 Einmalig auf einem neuen Server ausführen:
 
 ```bash
-curl -sL https://raw.githubusercontent.com/USER/dotfiles/main/bootstrap/remote.sh | bash
+curl -sL https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main/bootstrap/remote.sh | bash
 ```
 
 ### Was installiert wird
