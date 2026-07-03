@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-sudo apt update
-sudo apt install -y eza bat btop duf mc fd-find
+if command -v sudo &>/dev/null; then
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
+$SUDO apt update
+$SUDO apt install -y eza bat btop duf mc fd-find
 
 # broot: kein Debian-Paket, Binary-Release
 curl -o /tmp/broot -L https://dystroy.org/broot/download/x86_64-linux/broot
-sudo mv /tmp/broot /usr/local/bin/broot
-sudo chmod +x /usr/local/bin/broot
+$SUDO mv /tmp/broot /usr/local/bin/broot
+$SUDO chmod +x /usr/local/bin/broot
 broot --install
 
 # Aliase in ~/.bashrc eintragen
