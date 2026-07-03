@@ -10,15 +10,19 @@ fi
 $SUDO apt update
 $SUDO apt install -y gpg wget bat btop duf mc fd-find
 
-# eza: kein Standard-Debian-Paket, eigenes APT-Repo erforderlich
-mkdir -p /etc/apt/keyrings
-wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc \
-    | gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
-echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" \
-    | $SUDO tee /etc/apt/sources.list.d/gierens.list
-$SUDO chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
-$SUDO apt update
-$SUDO apt install -y eza
+# eza: Standard-Repo prüfen, sonst eigenes APT-Repo einbinden
+if apt-cache show eza &>/dev/null; then
+    $SUDO apt install -y eza
+else
+    mkdir -p /etc/apt/keyrings
+    wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc \
+        | gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" \
+        | $SUDO tee /etc/apt/sources.list.d/gierens.list
+    $SUDO chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
+    $SUDO apt update
+    $SUDO apt install -y eza
+fi
 
 # broot: kein Debian-Paket, Binary-Release
 curl -o /tmp/broot -L https://dystroy.org/broot/download/x86_64-linux/broot
