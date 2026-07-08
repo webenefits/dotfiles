@@ -31,6 +31,14 @@ $SUDO mv /tmp/yazi/yazi-x86_64-unknown-linux-gnu/yazi /tmp/yazi/yazi-x86_64-unkn
 $SUDO chmod +x /usr/local/bin/yazi /usr/local/bin/ya
 rm -rf /tmp/yazi /tmp/yazi.zip
 
+# fzf: apt-Version zu alt für yazi (braucht >= 0.53), Binary-Release von GitHub
+FZF_VERSION="$(curl -s https://api.github.com/repos/junegunn/fzf/releases/latest | grep -oP '"tag_name": "v\K[^"]+')"
+curl -o /tmp/fzf.tar.gz -L "https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz"
+tar -xzf /tmp/fzf.tar.gz -C /tmp
+$SUDO mv /tmp/fzf /usr/local/bin/
+$SUDO chmod +x /usr/local/bin/fzf
+rm -f /tmp/fzf.tar.gz
+
 # Aliase in Shell-RC-Dateien eintragen (idempotent: alter Block wird ersetzt)
 write_aliases() {
     local rc="$1"
@@ -68,6 +76,15 @@ fi
 # Ubuntu/Debian: fd binary heißt fdfind
 if command -v fdfind &>/dev/null; then
     alias fd='fdfind'
+fi
+
+# fzf: keybindings (Ctrl+R, Ctrl+T, Alt+C)
+if command -v fzf &>/dev/null; then
+    if [ -n "${BASH_VERSION:-}" ]; then
+        eval "$(fzf --bash)"
+    elif [ -n "${ZSH_VERSION:-}" ]; then
+        eval "$(fzf --zsh)"
+    fi
 fi
 
 # mc: cd-on-exit wrapper
