@@ -14,9 +14,9 @@ $SUDO apt install -y gpg wget unzip file bat btop duf mc fd-find
 if apt-cache show eza &>/dev/null; then
     $SUDO apt install -y eza
 else
-    mkdir -p /etc/apt/keyrings
+    $SUDO mkdir -p /etc/apt/keyrings
     wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc \
-        | gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+        | gpg --dearmor | $SUDO tee /etc/apt/keyrings/gierens.gpg > /dev/null
     echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" \
         | $SUDO tee /etc/apt/sources.list.d/gierens.list
     $SUDO chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
@@ -31,8 +31,26 @@ $SUDO mv /tmp/yazi/yazi-x86_64-unknown-linux-gnu/yazi /tmp/yazi/yazi-x86_64-unkn
 $SUDO chmod +x /usr/local/bin/yazi /usr/local/bin/ya
 rm -rf /tmp/yazi /tmp/yazi.zip
 
-# Aliase in ~/.bashrc eintragen
-cat >> ~/.bashrc << 'EOF'
+# Aliase in Shell-RC-Dateien eintragen (idempotent: alter Block wird ersetzt)
+write_aliases() {
+    local rc="$1"
+    local tmp
+    tmp="$(mktemp)"
+
+    # remove previous dotfiles block including the blank line before it
+    if [ -f "$rc" ]; then
+        awk '
+            /^# --- dotfiles: tool aliases ---$/ { inblock = 1; buf = ""; next }
+            /^# --- dotfiles: end ---$/          { inblock = 0; next }
+            inblock { next }
+            /^$/ { buf = buf "\n"; next }
+            { printf "%s", buf; buf = ""; print }
+        ' "$rc" > "$tmp"
+        cat "$tmp" > "$rc"
+    fi
+    rm -f "$tmp"
+
+    cat >> "$rc" << 'EOF'
 
 # --- dotfiles: tool aliases ---
 alias ls='eza'
@@ -64,6 +82,14 @@ function y() {
 	fi
 	rm -f -- "$tmp"
 }
+# --- dotfiles: end ---
 EOF
+    echo "Aliase eingetragen: $rc"
+}
 
-echo "Fertig. Neue Shell starten oder 'source ~/.bashrc' ausführen."
+write_aliases ~/.bashrc
+if [ -f ~/.zshrc ]; then
+    write_aliases ~/.zshrc
+fi
+
+echo "Fertig. Neue Shell starten oder RC-Datei neu sourcen."
