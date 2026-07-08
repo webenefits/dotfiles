@@ -20,7 +20,7 @@ curl -sL https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main/b
 | duf | df | `apt install duf` |
 | mc | Dateimanager | `apt install mc` |
 | fd | find | `apt install fd-find` |
-| broot | tree / ncdu / find / Dateimanager | Binary von dystroy.org |
+| yazi | TUI-Dateimanager (ranger/nnn) | Binary von GitHub-Releases |
 
 ## Tool-Cheatsheet
 
@@ -34,23 +34,23 @@ curl -sL https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main/b
 | `df` | `duf` | `apt install duf` | `duf`, Alias: `alias df=duf` |
 | Dateimanager | `mc` | `apt install mc` (Debian), `pacman -S mc` | `mc`, cd-on-exit: `source /usr/lib/mc/mc.sh` in `.bashrc` (Pfad: `dpkg -L mc \| grep mc.sh`) |
 | `find` | `fd` | `pacman -S fd` / `apt install fd-find` (Ubuntu: Binary `fdfind`) | `fd <pattern>`, Alias: `alias fd=fdfind` (nur Ubuntu) |
-| TUI-Filemanager | `broot` | `pacman -S broot` / Debian 12: Binary-Release erforderlich | `br`, Setup: `broot --install` (fügt Funktion in `.bashrc` ein) |
+| TUI-Filemanager | `yazi` | `pacman -S yazi` / Debian: Binary-Release erforderlich | `y` (Wrapper mit cd-on-exit, in `.bashrc`) |
 
-### broot im Detail
+### yazi im Detail
 
-broot (`br`) kombiniert mehrere klassische Tools in einer TUI:
-
-**`tree`-Ersatz**
-`br -sdp` zeigt Baum mit Größen, Daten und Permissions. Respektiert `.gitignore` automatisch — kein Noise durch `node_modules` etc. `alt+h` togglet hidden files, `alt+i` ignorierte Dateien — interaktiv ohne neuen Befehl.
-
-**`ncdu`-Ersatz — whale-spotting**
-`br -w` sortiert den Baum nach Größe, berechnet Verzeichnisgrößen im Hintergrund ohne zu blockieren. `:fs` zeigt alle eingehängten Dateisysteme mit Belegung. Vorteil: direkt aus der Ansicht löschen, ohne Tool zu wechseln.
+yazi ist ein asynchroner TUI-Dateimanager (Rust) im Miller-Spalten-Layout (parent / current / preview):
 
 **Dateimanager (ranger/nnn-Ersatz)**
-Zwei-Panel-Modus via `Ctrl+→`. F5 kopieren, F6 verschieben zwischen Panels. `rm`, `mkdir`, `mv`, `cp` sind eingebaut. Bildvorschau nativ via Kitty-Protokoll (Kitty, WezTerm).
+Kopieren (`y`), Ausschneiden (`x`), Einfügen (`p`), Löschen (`d`), Umbenennen (`r`) direkt in der TUI. Mehrfachauswahl mit `Space`, Bulk-Rename öffnet alle markierten Namen im `$EDITOR`. Tabs (`t`), alle I/O-Operationen laufen asynchron — große Verzeichnisse blockieren nicht.
 
-**`find`-Ersatz (einfache Fälle)**
-Tippen filtert Dateinamen fuzzy. Präfix `/` schaltet auf Regex um. `c/suchbegriff` durchsucht Datei**inhalte**. Kombinierbar: `!/\.log$/&c/ERROR` findet Dateien ohne `.log` im Namen, die aber "ERROR" enthalten. Für großflächige Codesuche bleibt `rg` überlegen.
+**Vorschau**
+Bildvorschau nativ via Kitty-Protokoll, iTerm2, Sixel oder Überzug++. Code-Dateien mit Syntax-Highlighting, Archive, PDFs und Videos (Thumbnails via ffmpeg) werden ebenfalls gerendert.
+
+**Suche & Navigation**
+`s` sucht Dateinamen via `fd`, `S` Datei**inhalte** via `rg` — Ergebnisse erscheinen als virtuelles Verzeichnis. `z` springt per zoxide, `Z` per fzf. Für großflächige Codesuche bleibt `rg` direkt überlegen.
+
+**cd-on-exit**
+Der `y`-Wrapper (offizielle Shell-Funktion, wird vom Bootstrap in `.bashrc` eingetragen) wechselt beim Beenden ins zuletzt besuchte Verzeichnis — yazi immer über `y` statt `yazi` starten.
 
 ### Lokal (Fish)
 
@@ -59,7 +59,6 @@ Tippen filtert Dateinamen fuzzy. Präfix `/` schaltet auf Regex um. `c/suchbegri
 | `cd` | `zoxide` | `pacman -S zoxide` / `apt install zoxide` | `z <pattern>`, Init in `config.fish`: `zoxide init fish \| source` |
 | `man` | `tldr` | `pacman -S tealdeer` / `cargo install tealdeer` (kein Debian-Paket) | `tldr <command>` |
 | History-Search | `fzf` | `pacman -S fzf` / `apt install fzf` | `Ctrl+R`, `Ctrl+T`, `Alt+C`, Init in `config.fish`: `fzf --fish \| source` |
-| `z` + `br` | `zb` | Fish-Funktion | `zb <pattern>` springt per zoxide ins Verzeichnis und öffnet broot dort |
 
 ## Struktur
 

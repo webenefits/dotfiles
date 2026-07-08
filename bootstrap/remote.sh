@@ -8,7 +8,7 @@ else
 fi
 
 $SUDO apt update
-$SUDO apt install -y gpg wget bat btop duf mc fd-find
+$SUDO apt install -y gpg wget unzip file bat btop duf mc fd-find
 
 # eza: Standard-Repo prüfen, sonst eigenes APT-Repo einbinden
 if apt-cache show eza &>/dev/null; then
@@ -24,11 +24,12 @@ else
     $SUDO apt install -y eza
 fi
 
-# broot: kein Debian-Paket, Binary-Release
-curl -o /tmp/broot -L https://dystroy.org/broot/download/x86_64-linux/broot
-$SUDO mv /tmp/broot /usr/local/bin/broot
-$SUDO chmod +x /usr/local/bin/broot
-broot --install
+# yazi: kein Debian-Paket, Binary-Release von GitHub
+curl -o /tmp/yazi.zip -L https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.zip
+unzip -o /tmp/yazi.zip -d /tmp/yazi
+$SUDO mv /tmp/yazi/yazi-x86_64-unknown-linux-gnu/yazi /tmp/yazi/yazi-x86_64-unknown-linux-gnu/ya /usr/local/bin/
+$SUDO chmod +x /usr/local/bin/yazi /usr/local/bin/ya
+rm -rf /tmp/yazi /tmp/yazi.zip
 
 # Aliase in ~/.bashrc eintragen
 cat >> ~/.bashrc << 'EOF'
@@ -53,6 +54,16 @@ fi
 
 # mc: cd-on-exit wrapper
 [ -f /usr/lib/mc/mc.sh ] && source /usr/lib/mc/mc.sh
+
+# yazi: cd-on-exit wrapper
+function y() {
+	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+	yazi "$@" --cwd-file="$tmp"
+	if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+		builtin cd -- "$cwd"
+	fi
+	rm -f -- "$tmp"
+}
 EOF
 
 echo "Fertig. Neue Shell starten oder 'source ~/.bashrc' ausführen."
