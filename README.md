@@ -26,7 +26,7 @@ curl -sL https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main/b
 | tldr | man | `apt install tealdeer` (Binary `tldr`) |
 | chafa | Bildvorschau in yazi | `apt install chafa` |
 
-Das Bootstrap-Script trägt Aliase und Init-Zeilen idempotent in `~/.bashrc`, `~/.zshrc` (falls vorhanden) und `~/.config/fish/config.fish` (falls fish installiert) ein.
+Die Shell-Integration (Aliase, `fzf`-/`zoxide`-Init, `y`-Wrapper) liegt in `shell/` und wird vom Bootstrap nach `~/.config/dotfiles/` geladen. In `~/.bashrc`, `~/.zshrc` (falls vorhanden) und `~/.config/fish/config.fish` (falls fish installiert) wird idempotent nur eine `source`-Zeile eingetragen — Updates erfordern kein erneutes Bearbeiten der RC-Dateien. Schlägt die Installation eines Tools fehl, laufen die übrigen weiter; am Ende listet das Script alle Fehler auf.
 
 ## Tool-Cheatsheet
 
@@ -64,10 +64,12 @@ Der `y`-Wrapper (offizielle Shell-Funktion, wird vom Bootstrap in die Shell-Conf
 
 ```
 bootstrap/
-  remote.sh       ← Bootstrap für Debian/Ubuntu-Server
+  remote.sh        ← Bootstrap für Debian/Ubuntu-Server
 shell/
   bash/
-    .bashrc       ← Bash-Aliase und -Konfiguration
+    aliases.sh     ← Aliase & Integration für bash/zsh (→ ~/.config/dotfiles/aliases.sh)
   fish/
-    config.fish   ← Fish-Konfiguration (lokal)
+    config.fish    ← Aliase & Integration für fish (→ ~/.config/dotfiles/config.fish)
 ```
+
+Die Dateien unter `shell/` sind die Single Source of Truth; das Bootstrap-Script lädt sie herunter und bindet sie per `source` ein.
