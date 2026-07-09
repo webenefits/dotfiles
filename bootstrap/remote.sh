@@ -39,24 +39,26 @@ $SUDO mv /tmp/fzf /usr/local/bin/
 $SUDO chmod +x /usr/local/bin/fzf
 rm -f /tmp/fzf.tar.gz
 
-# Aliase in Shell-RC-Dateien eintragen (idempotent: alter Block wird ersetzt)
+# remove previous dotfiles block including the blank line before it (idempotent)
+strip_block() {
+    local rc="$1" tmp
+    [ -f "$rc" ] || return 0
+    tmp="$(mktemp)"
+    awk '
+        /^# --- dotfiles: tool aliases ---$/ { inblock = 1; buf = ""; next }
+        /^# --- dotfiles: end ---$/          { inblock = 0; next }
+        inblock { next }
+        /^$/ { buf = buf "\n"; next }
+        { printf "%s", buf; buf = ""; print }
+    ' "$rc" > "$tmp"
+    cat "$tmp" > "$rc"
+    rm -f "$tmp"
+}
+
+# Aliase in Shell-RC-Dateien eintragen (bash/zsh)
 write_aliases() {
     local rc="$1"
-    local tmp
-    tmp="$(mktemp)"
-
-    # remove previous dotfiles block including the blank line before it
-    if [ -f "$rc" ]; then
-        awk '
-            /^# --- dotfiles: tool aliases ---$/ { inblock = 1; buf = ""; next }
-            /^# --- dotfiles: end ---$/          { inblock = 0; next }
-            inblock { next }
-            /^$/ { buf = buf "\n"; next }
-            { printf "%s", buf; buf = ""; print }
-        ' "$rc" > "$tmp"
-        cat "$tmp" > "$rc"
-    fi
-    rm -f "$tmp"
+    strip_block "$rc"
 
     cat >> "$rc" << 'EOF'
 
@@ -104,9 +106,59 @@ EOF
     echo "Aliase eingetragen: $rc"
 }
 
+# Aliase in fish-Config eintragen (eigene Syntax)
+write_aliases_fish() {
+    local rc="$1"
+    mkdir -p "$(dirname "$rc")"
+    strip_block "$rc"
+
+    cat >> "$rc" << 'EOF'
+
+# --- dotfiles: tool aliases ---
+alias ls='eza'
+alias top='btop'
+alias df='duf'
+
+# Ubuntu/Debian: bat binary heißt batcat
+if type -q batcat
+    alias bat='batcat'
+    alias cat='batcat'
+else
+    alias cat='bat'
+end
+
+# Ubuntu/Debian: fd binary heißt fdfind
+if type -q fdfind
+    alias fd='fdfind'
+end
+
+# fzf: keybindings (Ctrl+R, Ctrl+T, Alt+C)
+if type -q fzf
+    fzf --fish | source
+end
+
+# yazi: cd-on-exit wrapper
+function y
+    set tmp (mktemp -t "yazi-cwd.XXXXXX")
+    yazi $argv --cwd-file="$tmp"
+    if set cwd (command cat -- "$tmp"); and test -n "$cwd"; and test "$cwd" != "$PWD"
+        builtin cd -- "$cwd"
+    end
+    rm -f -- "$tmp"
+end
+# --- dotfiles: end ---
+EOF
+    echo "Aliase eingetragen: $rc"
+}
+
 write_aliases ~/.bashrc
 if [ -f ~/.zshrc ]; then
     write_aliases ~/.zshrc
+fi
+
+# fish nur wenn installiert oder config bereits vorhanden
+if command -v fish &>/dev/null || [ -f ~/.config/fish/config.fish ]; then
+    write_aliases_fish ~/.config/fish/config.fish
 fi
 
 echo "Fertig. Neue Shell starten oder RC-Datei neu sourcen."
