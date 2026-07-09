@@ -8,7 +8,7 @@ else
 fi
 
 $SUDO apt update
-$SUDO apt install -y gpg wget unzip file bat btop duf mc fd-find chafa
+$SUDO apt install -y gpg wget unzip file bat btop duf mc fd-find chafa zoxide tealdeer
 
 # eza: Standard-Repo prüfen, sonst eigenes APT-Repo einbinden
 if apt-cache show eza &>/dev/null; then
@@ -89,6 +89,15 @@ if command -v fzf &>/dev/null; then
     fi
 fi
 
+# zoxide: smarter cd (z, zi)
+if command -v zoxide &>/dev/null; then
+    if [ -n "${BASH_VERSION:-}" ]; then
+        eval "$(zoxide init bash)"
+    elif [ -n "${ZSH_VERSION:-}" ]; then
+        eval "$(zoxide init zsh)"
+    fi
+fi
+
 # mc: cd-on-exit wrapper
 [ -f /usr/lib/mc/mc.sh ] && source /usr/lib/mc/mc.sh
 
@@ -135,6 +144,11 @@ end
 # fzf: keybindings (Ctrl+R, Ctrl+T, Alt+C)
 if type -q fzf
     fzf --fish | source
+end
+
+# zoxide: smarter cd (z, zi)
+if type -q zoxide
+    zoxide init fish | source
 end
 
 # yazi: cd-on-exit wrapper
