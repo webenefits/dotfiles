@@ -100,6 +100,13 @@ cheatsheets/
     vim.md
     nano.md
     yazi.md
+    git.md
+    docker.md
+    ddev.md
+    composer.md
+    typo3.md
+    shopware.md
+    oxid.md
 ```
 
 Die Dateien unter `shell/` und `cheatsheets/` sind die Single Source of Truth; das Bootstrap-Script lädt sie herunter und bindet sie ein.
