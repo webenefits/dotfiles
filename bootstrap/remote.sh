@@ -8,7 +8,7 @@ else
 fi
 
 $SUDO apt update
-$SUDO apt install -y gpg wget unzip file bat btop duf mc fd-find
+$SUDO apt install -y gpg wget unzip file bat btop duf mc fd-find chafa
 
 # eza: Standard-Repo prüfen, sonst eigenes APT-Repo einbinden
 if apt-cache show eza &>/dev/null; then
