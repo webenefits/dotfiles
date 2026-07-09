@@ -25,6 +25,7 @@ curl -sL https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main/b
 | zoxide | cd | `apt install zoxide` |
 | tldr | man | `apt install tealdeer` (Binary `tldr`) |
 | chafa | Bildvorschau in yazi | `apt install chafa` |
+| neovim | vim / nano | `apt install neovim` |
 
 Die Shell-Integration (Aliase, `fzf`-/`zoxide`-Init, `y`-Wrapper) liegt in `shell/` und wird vom Bootstrap nach `~/.config/dotfiles/` geladen. In `~/.bashrc`, `~/.zshrc` (falls vorhanden) und `~/.config/fish/config.fish` (falls fish installiert) wird idempotent nur eine `source`-Zeile eingetragen — Updates erfordern kein erneutes Bearbeiten der RC-Dateien. Schlägt die Installation eines Tools fehl, laufen die übrigen weiter; am Ende listet das Script alle Fehler auf.
 
@@ -43,6 +44,7 @@ Die Shell-Integration (Aliase, `fzf`-/`zoxide`-Init, `y`-Wrapper) liegt in `shel
 | `cd` | `zoxide` | `pacman -S zoxide` / `apt install zoxide` | `z <pattern>`, `zi`; Init: bash `eval "$(zoxide init bash)"`, fish `zoxide init fish \| source` |
 | `man` | `tldr` | `pacman -S tealdeer` / `apt install tealdeer` (Binary `tldr`) | `tldr <command>`, `tldr --update` |
 | Bildvorschau (yazi) | `chafa` | `pacman -S chafa` / `apt install chafa` | Fallback-Adapter für yazi ohne Kitty-/Sixel-Grafik |
+| `vim`/`nano` | `neovim` | `pacman -S neovim` / `apt install neovim` | `nvim`; als `$EDITOR` gesetzt (von yazi genutzt), Alias `vim=nvim` |
 
 ### yazi im Detail
 

@@ -22,6 +22,12 @@ if type -q fzf
     fzf --fish | source
 end
 
+# neovim: als Standard-Editor (u. a. von yazi genutzt)
+if type -q nvim
+    set -gx EDITOR nvim
+    alias vim='nvim'
+end
+
 # zoxide: smarter cd (z, zi)
 if type -q zoxide
     zoxide init fish | source

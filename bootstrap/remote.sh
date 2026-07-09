@@ -29,7 +29,7 @@ echo "==> Paketquellen aktualisieren"
 $SUDO apt-get update -y || echo "  Warnung: apt-get update fehlgeschlagen" >&2
 
 echo "==> APT-Pakete installieren"
-APT_PKGS=(gpg wget unzip file bat btop duf mc fd-find chafa zoxide tealdeer)
+APT_PKGS=(gpg wget unzip file bat btop duf mc fd-find chafa zoxide tealdeer neovim)
 for pkg in "${APT_PKGS[@]}"; do
     try "$pkg" $SUDO apt-get install -y "$pkg"
 done

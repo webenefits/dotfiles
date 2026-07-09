@@ -26,6 +26,12 @@ if command -v fzf >/dev/null 2>&1; then
     fi
 fi
 
+# neovim: als Standard-Editor (u. a. von yazi genutzt)
+if command -v nvim >/dev/null 2>&1; then
+    export EDITOR=nvim
+    alias vim='nvim'
+fi
+
 # zoxide: smarter cd (z, zi)
 if command -v zoxide >/dev/null 2>&1; then
     if [ -n "${BASH_VERSION:-}" ]; then
