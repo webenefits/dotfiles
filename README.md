@@ -24,7 +24,7 @@ curl -sL https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main/b
 | fzf | Fuzzy Finder (History-Search, yazi `Z`) | Binary von GitHub-Releases |
 | zoxide | cd | `apt install zoxide` |
 | tldr | man | `apt install tealdeer` (Binary `tldr`) |
-| chafa | Bildvorschau in yazi | `apt install chafa` |
+| chafa | Bildvorschau in yazi | Binary von hpjansson.org (apt-Version zu alt) |
 | neovim | vim / nano | `apt install neovim` |
 
 Zusätzlich installiert das Script den `cheat`-Wrapper nach `~/.local/bin/` und die Cheatsheets nach `~/.cheatsheets/` (siehe [Cheatsheets](#cheatsheets)).
@@ -47,7 +47,7 @@ Das Bootstrap-Script ist idempotent: erneutes Ausführen aktualisiert Tools, Con
 | History-Search | `fzf` | `pacman -S fzf` / Debian: Binary-Release erforderlich (apt-Version < 0.53, zu alt für yazi) | `Ctrl+R`, `Ctrl+T`, `Alt+C`; von yazi für `Z` genutzt. Init: bash `eval "$(fzf --bash)"`, fish `fzf --fish \| source` |
 | `cd` | `zoxide` | `pacman -S zoxide` / `apt install zoxide` | `z <pattern>`, `zi`; Init: bash `eval "$(zoxide init bash)"`, fish `zoxide init fish \| source` |
 | `man` | `tldr` | `pacman -S tealdeer` / `apt install tealdeer` (Binary `tldr`) | `tldr <command>`, `tldr --update` |
-| Bildvorschau (yazi) | `chafa` | `pacman -S chafa` / `apt install chafa` | Fallback-Adapter für yazi ohne Kitty-/Sixel-Grafik |
+| Bildvorschau (yazi) | `chafa` | `pacman -S chafa` / Debian/Ubuntu: statisches Binary von hpjansson.org (apt-Version < 1.16 kennt yazis `--probe` nicht) | Fallback-Adapter für yazi ohne Kitty-/Sixel-Grafik |
 | `vim`/`nano` | `neovim` | `pacman -S neovim` / `apt install neovim` | `nvim`; als `$EDITOR` gesetzt (von yazi genutzt), Alias `vim=nvim` |
 
 ### yazi im Detail

@@ -6,6 +6,10 @@ set -uo pipefail
 DOTFILES_RAW="https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main"
 CONFIG_DIR="$HOME/.config/dotfiles"
 
+# chafa: apt-Versionen (Debian 12: 1.12, Ubuntu 24.04: 1.14) kennen die von
+# yazi genutzte Option --probe nicht (erst ab 1.16). Statisches Binary pinnen.
+CHAFA_VERSION="1.18.2-1"
+
 if command -v sudo &>/dev/null; then
     SUDO="sudo"
 else
@@ -29,7 +33,7 @@ echo "==> Paketquellen aktualisieren"
 $SUDO apt-get update -y || echo "  Warnung: apt-get update fehlgeschlagen" >&2
 
 echo "==> APT-Pakete installieren"
-APT_PKGS=(gpg wget unzip file bat btop duf mc fd-find chafa zoxide tealdeer neovim)
+APT_PKGS=(gpg wget unzip file bat btop duf mc fd-find zoxide tealdeer neovim)
 for pkg in "${APT_PKGS[@]}"; do
     try "$pkg" $SUDO apt-get install -y "$pkg"
 done
@@ -76,6 +80,18 @@ install_fzf() {
 }
 echo "==> fzf installieren"
 try "fzf" install_fzf
+
+# chafa: statisches Binary (apt-Version zu alt für yazi, siehe CHAFA_VERSION oben)
+install_chafa() {
+    local dir="chafa-${CHAFA_VERSION}-x86_64-linux-gnu"
+    curl -fL -o /tmp/chafa.tar.gz "https://hpjansson.org/chafa/releases/static/${dir}.tar.gz" || return 1
+    tar -xzf /tmp/chafa.tar.gz -C /tmp || return 1
+    $SUDO mv "/tmp/${dir}/chafa" /usr/local/bin/chafa || return 1
+    $SUDO chmod +x /usr/local/bin/chafa || return 1
+    rm -rf "/tmp/${dir}" /tmp/chafa.tar.gz
+}
+echo "==> chafa installieren"
+try "chafa" install_chafa
 
 # Shell-Configs herunterladen und per source einbinden (idempotent).
 MARK_START="# --- dotfiles ---"
