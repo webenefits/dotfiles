@@ -28,6 +28,8 @@ o / O               - neue Zeile unter / über einfügen
 ea                  - am Wortende einfügen
 Ctrl-w (Insert)      - Wort vor Cursor löschen
 Ctrl-r x (Insert)    - Inhalt von Register x einfügen
+Ctrl-c (Insert)      - Insert-Modus verlassen (wie Esc, aber ohne InsertLeave-Event)
+Ctrl-o (Insert)      - einen Normal-Modus-Befehl ausführen, dann zurück (z. B. Ctrl-o zz)
 
 ## Suchen & Ersetzen
 /pattern             - vorwärts suchen
