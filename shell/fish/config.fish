@@ -5,7 +5,7 @@ fish_add_path -g "$HOME/.local/bin"
 
 # ls -> eza, but don't override an existing eza alias (e.g. CachyOS default)
 if type -q eza; and not functions ls 2>/dev/null | string match -q -- '*eza*'
-    alias ls='eza -l --color=always --group-directories-first --icons'
+    alias ls='eza -l --color=always --group-directories-first --icons=always'
 end
 alias top='btop'
 alias df='duf'
