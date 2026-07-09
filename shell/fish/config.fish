@@ -7,15 +7,15 @@ alias ls='eza'
 alias top='btop'
 alias df='duf'
 
-# Ubuntu/Debian: bat binary heißt batcat
+# bat as cat replacement (binary is 'batcat' on Ubuntu/Debian, 'bat' on Arch)
 if type -q batcat
     alias bat='batcat'
     alias cat='batcat'
-else
+else if type -q bat
     alias cat='bat'
 end
 
-# Ubuntu/Debian: fd binary heißt fdfind
+# fd (binary is 'fdfind' on Ubuntu/Debian, 'fd' on Arch)
 if type -q fdfind
     alias fd='fdfind'
 end
