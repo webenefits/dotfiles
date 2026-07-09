@@ -133,12 +133,13 @@ MARK_END="# --- dotfiles: end ---"
 MARK_LEGACY="# --- dotfiles: tool aliases ---"
 
 # fügt eine Import-Zeile zwischen den Markern ein, ersetzt vorhandenen Block
+# (Marker optional übersteuerbar, z. B. Lua-Kommentare für nvim)
 add_import() {
-    local rc="$1" line="$2" tmp
+    local rc="$1" line="$2" start="${3:-$MARK_START}" end="${4:-$MARK_END}" tmp
     mkdir -p "$(dirname "$rc")" || return 1
     touch "$rc" || return 1
     tmp="$(mktemp)" || return 1
-    awk -v s="$MARK_START" -v s2="$MARK_LEGACY" -v e="$MARK_END" '
+    awk -v s="$start" -v s2="$MARK_LEGACY" -v e="$end" '
         $0 == s || $0 == s2 { inblock = 1; next }
         $0 == e { inblock = 0; next }
         !inblock { print }
@@ -146,7 +147,7 @@ add_import() {
     # trailing Leerzeilen entfernen, dann Block anhängen
     sed -e :a -e '/^\n*$/{$d;N;ba}' "$tmp" > "$rc"
     rm -f "$tmp"
-    printf '\n%s\n%s\n%s\n' "$MARK_START" "$line" "$MARK_END" >> "$rc"
+    printf '\n%s\n%s\n%s\n' "$start" "$line" "$end" >> "$rc"
 }
 
 install_shell_config() {
@@ -168,6 +169,23 @@ install_shell_config() {
 }
 echo "==> Shell-Config einbinden"
 try "shell-config" install_shell_config
+
+# nvim-Config herunterladen und per dofile einbinden (analog zu den Shell-Configs)
+install_nvim_config() {
+    # init.vim und init.lua schließen sich in nvim gegenseitig aus —
+    # eine vorhandene init.vim nicht durch Anlegen einer init.lua brechen
+    if [ -f "$HOME/.config/nvim/init.vim" ]; then
+        echo "  init.vim vorhanden, nvim-Config übersprungen" >&2
+        return 1
+    fi
+    mkdir -p "$CONFIG_DIR" || return 1
+    curl -fsSL "$DOTFILES_RAW/nvim/init.lua" -o "$CONFIG_DIR/nvim.lua" || return 1
+    add_import "$HOME/.config/nvim/init.lua" \
+        'pcall(dofile, os.getenv("HOME") .. "/.config/dotfiles/nvim.lua")' \
+        "-- --- dotfiles ---" "-- --- dotfiles: end ---"
+}
+echo "==> nvim-Config einbinden"
+try "nvim-config" install_nvim_config
 
 # cheat-Wrapper (~/.local/bin) und Cheatsheets (~/.cheatsheets) installieren.
 # Neue Sheets hier ergänzen (HTTP bietet kein Verzeichnislisting).
