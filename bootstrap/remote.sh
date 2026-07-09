@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Bootstrap für Debian/Ubuntu-Server. Ein fehlgeschlagener Schritt bricht das
-# Script nicht ab — am Ende folgt eine Zusammenfassung der Fehler.
+# Bootstrap für Debian/Ubuntu-Server und Arch/CachyOS. Ein fehlgeschlagener
+# Schritt bricht das Script nicht ab — am Ende folgt eine Zusammenfassung.
 set -uo pipefail
 
 DOTFILES_RAW="https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main"
@@ -8,12 +8,23 @@ CONFIG_DIR="$HOME/.config/dotfiles"
 
 # chafa: apt-Versionen (Debian 12: 1.12, Ubuntu 24.04: 1.14) kennen die von
 # yazi genutzte Option --probe nicht (erst ab 1.16). Statisches Binary pinnen.
+# (nur Debian/Ubuntu — Arch liefert eine aktuelle Version via pacman)
 CHAFA_VERSION="1.18.2-1"
 
 if command -v sudo &>/dev/null; then
     SUDO="sudo"
 else
     SUDO=""
+fi
+
+# Paketmanager erkennen
+if command -v pacman &>/dev/null; then
+    DISTRO="arch"
+elif command -v apt-get &>/dev/null; then
+    DISTRO="debian"
+else
+    echo "Nicht unterstützte Distribution (weder pacman noch apt-get gefunden)." >&2
+    exit 1
 fi
 
 FAILED=()
@@ -29,69 +40,90 @@ try() {
     fi
 }
 
-echo "==> Paketquellen aktualisieren"
-$SUDO apt-get update -y || echo "  Warnung: apt-get update fehlgeschlagen" >&2
+# installiert ein Paket über den erkannten Paketmanager
+pkg_install() {
+    case "$DISTRO" in
+        arch)   $SUDO pacman -S --needed --noconfirm "$@" ;;
+        debian) $SUDO apt-get install -y "$@" ;;
+    esac
+}
 
-echo "==> APT-Pakete installieren"
-APT_PKGS=(gpg wget unzip file bat btop duf mc fd-find zoxide tealdeer neovim lnav)
-for pkg in "${APT_PKGS[@]}"; do
-    try "$pkg" $SUDO apt-get install -y "$pkg"
+echo "==> Paketquellen aktualisieren ($DISTRO)"
+case "$DISTRO" in
+    # nur DB-Refresh; kein -u, um ungefragtes Full-Upgrade zu vermeiden
+    arch)   $SUDO pacman -Sy --noconfirm || echo "  Warnung: pacman -Sy fehlgeschlagen" >&2 ;;
+    debian) $SUDO apt-get update -y      || echo "  Warnung: apt-get update fehlgeschlagen" >&2 ;;
+esac
+
+echo "==> Pakete installieren"
+if [ "$DISTRO" = arch ]; then
+    # Arch: alles inkl. eza/yazi/fzf/chafa aus den offiziellen Repos
+    PKGS=(file bat btop duf mc fd eza yazi fzf zoxide tealdeer neovim lnav chafa)
+else
+    # Debian/Ubuntu: eza/yazi/fzf/chafa folgen unten gesondert
+    PKGS=(gpg wget unzip file bat btop duf mc fd-find zoxide tealdeer neovim lnav)
+fi
+for pkg in "${PKGS[@]}"; do
+    try "$pkg" pkg_install "$pkg"
 done
 
-# eza: Standard-Repo prüfen, sonst eigenes APT-Repo einbinden
-install_eza() {
-    if apt-cache show eza &>/dev/null; then
-        $SUDO apt-get install -y eza
-    else
-        $SUDO mkdir -p /etc/apt/keyrings || return 1
-        wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc \
-            | gpg --dearmor | $SUDO tee /etc/apt/keyrings/gierens.gpg > /dev/null || return 1
-        echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" \
-            | $SUDO tee /etc/apt/sources.list.d/gierens.list > /dev/null || return 1
-        $SUDO chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list || return 1
-        $SUDO apt-get update -y || return 1
-        $SUDO apt-get install -y eza
-    fi
-}
-echo "==> eza installieren"
-try "eza" install_eza
+# --- Debian/Ubuntu: Tools ohne (aktuelles) apt-Paket gesondert installieren ---
+if [ "$DISTRO" = debian ]; then
+    # eza: Standard-Repo prüfen, sonst eigenes APT-Repo einbinden
+    install_eza() {
+        if apt-cache show eza &>/dev/null; then
+            $SUDO apt-get install -y eza
+        else
+            $SUDO mkdir -p /etc/apt/keyrings || return 1
+            wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc \
+                | gpg --dearmor | $SUDO tee /etc/apt/keyrings/gierens.gpg > /dev/null || return 1
+            echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" \
+                | $SUDO tee /etc/apt/sources.list.d/gierens.list > /dev/null || return 1
+            $SUDO chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list || return 1
+            $SUDO apt-get update -y || return 1
+            $SUDO apt-get install -y eza
+        fi
+    }
+    echo "==> eza installieren"
+    try "eza" install_eza
 
-# yazi: kein Debian-Paket, Binary-Release von GitHub
-install_yazi() {
-    curl -fL -o /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.zip || return 1
-    unzip -o /tmp/yazi.zip -d /tmp/yazi || return 1
-    $SUDO mv /tmp/yazi/yazi-x86_64-unknown-linux-gnu/yazi /tmp/yazi/yazi-x86_64-unknown-linux-gnu/ya /usr/local/bin/ || return 1
-    $SUDO chmod +x /usr/local/bin/yazi /usr/local/bin/ya || return 1
-    rm -rf /tmp/yazi /tmp/yazi.zip
-}
-echo "==> yazi installieren"
-try "yazi" install_yazi
+    # yazi: kein Debian-Paket, Binary-Release von GitHub
+    install_yazi() {
+        curl -fL -o /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.zip || return 1
+        unzip -o /tmp/yazi.zip -d /tmp/yazi || return 1
+        $SUDO mv /tmp/yazi/yazi-x86_64-unknown-linux-gnu/yazi /tmp/yazi/yazi-x86_64-unknown-linux-gnu/ya /usr/local/bin/ || return 1
+        $SUDO chmod +x /usr/local/bin/yazi /usr/local/bin/ya || return 1
+        rm -rf /tmp/yazi /tmp/yazi.zip
+    }
+    echo "==> yazi installieren"
+    try "yazi" install_yazi
 
-# fzf: apt-Version zu alt für yazi (braucht >= 0.53), Binary-Release von GitHub
-install_fzf() {
-    local ver
-    ver="$(curl -fsSL https://api.github.com/repos/junegunn/fzf/releases/latest | grep -oP '"tag_name": "v\K[^"]+')" || return 1
-    [ -n "$ver" ] || return 1
-    curl -fL -o /tmp/fzf.tar.gz "https://github.com/junegunn/fzf/releases/download/v${ver}/fzf-${ver}-linux_amd64.tar.gz" || return 1
-    tar -xzf /tmp/fzf.tar.gz -C /tmp || return 1
-    $SUDO mv /tmp/fzf /usr/local/bin/ || return 1
-    $SUDO chmod +x /usr/local/bin/fzf || return 1
-    rm -f /tmp/fzf.tar.gz
-}
-echo "==> fzf installieren"
-try "fzf" install_fzf
+    # fzf: apt-Version zu alt für yazi (braucht >= 0.53), Binary-Release von GitHub
+    install_fzf() {
+        local ver
+        ver="$(curl -fsSL https://api.github.com/repos/junegunn/fzf/releases/latest | grep -oP '"tag_name": "v\K[^"]+')" || return 1
+        [ -n "$ver" ] || return 1
+        curl -fL -o /tmp/fzf.tar.gz "https://github.com/junegunn/fzf/releases/download/v${ver}/fzf-${ver}-linux_amd64.tar.gz" || return 1
+        tar -xzf /tmp/fzf.tar.gz -C /tmp || return 1
+        $SUDO mv /tmp/fzf /usr/local/bin/ || return 1
+        $SUDO chmod +x /usr/local/bin/fzf || return 1
+        rm -f /tmp/fzf.tar.gz
+    }
+    echo "==> fzf installieren"
+    try "fzf" install_fzf
 
-# chafa: statisches Binary (apt-Version zu alt für yazi, siehe CHAFA_VERSION oben)
-install_chafa() {
-    local dir="chafa-${CHAFA_VERSION}-x86_64-linux-gnu"
-    curl -fL -o /tmp/chafa.tar.gz "https://hpjansson.org/chafa/releases/static/${dir}.tar.gz" || return 1
-    tar -xzf /tmp/chafa.tar.gz -C /tmp || return 1
-    $SUDO mv "/tmp/${dir}/chafa" /usr/local/bin/chafa || return 1
-    $SUDO chmod +x /usr/local/bin/chafa || return 1
-    rm -rf "/tmp/${dir}" /tmp/chafa.tar.gz
-}
-echo "==> chafa installieren"
-try "chafa" install_chafa
+    # chafa: statisches Binary (apt-Version zu alt für yazi, siehe CHAFA_VERSION oben)
+    install_chafa() {
+        local dir="chafa-${CHAFA_VERSION}-x86_64-linux-gnu"
+        curl -fL -o /tmp/chafa.tar.gz "https://hpjansson.org/chafa/releases/static/${dir}.tar.gz" || return 1
+        tar -xzf /tmp/chafa.tar.gz -C /tmp || return 1
+        $SUDO mv "/tmp/${dir}/chafa" /usr/local/bin/chafa || return 1
+        $SUDO chmod +x /usr/local/bin/chafa || return 1
+        rm -rf "/tmp/${dir}" /tmp/chafa.tar.gz
+    }
+    echo "==> chafa installieren"
+    try "chafa" install_chafa
+fi
 
 # Shell-Configs herunterladen und per source einbinden (idempotent).
 MARK_START="# --- dotfiles ---"

@@ -1,10 +1,10 @@
 # Dotfiles
 
-Dotfiles und Bootstrap-Scripts für Remote-Server (Debian/Ubuntu).
+Dotfiles und Bootstrap-Script für Debian/Ubuntu und Arch/CachyOS.
 
 ## Bootstrap
 
-Einmalig auf einem neuen Server ausführen:
+Einmalig ausführen — das Script erkennt den Paketmanager (`apt`/`pacman`) automatisch:
 
 ```bash
 curl -sL https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main/bootstrap/remote.sh | bash
@@ -12,21 +12,23 @@ curl -sL https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main/b
 
 ### Was installiert wird
 
-| Tool | Ersetzt | Paket |
-|------|---------|-------|
-| eza | ls | `apt install eza` |
-| bat | cat / less | `apt install bat` |
-| btop | top / htop | `apt install btop` |
-| duf | df | `apt install duf` |
-| mc | Dateimanager | `apt install mc` |
-| fd | find | `apt install fd-find` |
-| yazi | TUI-Dateimanager (ranger/nnn) | Binary von GitHub-Releases |
-| fzf | Fuzzy Finder (History-Search, yazi `Z`) | Binary von GitHub-Releases |
-| zoxide | cd | `apt install zoxide` |
-| tldr | man | `apt install tealdeer` (Binary `tldr`) |
-| chafa | Bildvorschau in yazi | Binary von hpjansson.org (apt-Version zu alt) |
-| neovim | vim / nano | `apt install neovim` |
-| lnav | tail / less (Logs) | `apt install lnav` |
+Auf Arch/CachyOS liegen alle Tools in den offiziellen Repos (`pacman`). Auf Debian/Ubuntu sind einige apt-Versionen zu alt (yazi, fzf, chafa) und werden als Binary bezogen.
+
+| Tool | Ersetzt | Arch (pacman) | Debian/Ubuntu |
+|------|---------|---------------|---------------|
+| eza | ls | `eza` | `apt install eza` (+ eigenes Repo als Fallback) |
+| bat | cat / less | `bat` | `apt install bat` (Binary `batcat`) |
+| btop | top / htop | `btop` | `apt install btop` |
+| duf | df | `duf` | `apt install duf` |
+| mc | Dateimanager | `mc` | `apt install mc` |
+| fd | find | `fd` | `apt install fd-find` (Binary `fdfind`) |
+| yazi | TUI-Dateimanager (ranger/nnn) | `yazi` | Binary von GitHub-Releases |
+| fzf | Fuzzy Finder (History-Search, yazi `Z`) | `fzf` | Binary von GitHub-Releases |
+| zoxide | cd | `zoxide` | `apt install zoxide` |
+| tldr | man | `tealdeer` | `apt install tealdeer` (Binary `tldr`) |
+| chafa | Bildvorschau in yazi | `chafa` | Binary von hpjansson.org (apt-Version zu alt) |
+| neovim | vim / nano | `neovim` | `apt install neovim` |
+| lnav | tail / less (Logs) | `lnav` | `apt install lnav` |
 
 Zusätzlich installiert das Script den `cheat`-Wrapper nach `~/.local/bin/` und die Cheatsheets nach `~/.cheatsheets/` (siehe [Cheatsheets](#cheatsheets)).
 
@@ -86,7 +88,7 @@ Der Wrapper landet unter `~/.local/bin/cheat`, die Sheets unter `~/.cheatsheets/
 
 ```
 bootstrap/
-  remote.sh        ← Bootstrap für Debian/Ubuntu-Server
+  remote.sh        ← Bootstrap für Debian/Ubuntu & Arch/CachyOS
 shell/
   bash/
     aliases.sh     ← Aliase & Integration für bash/zsh (→ ~/.config/dotfiles/aliases.sh)
