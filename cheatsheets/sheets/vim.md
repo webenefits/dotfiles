@@ -116,6 +116,7 @@ do / dp                - Unterschied holen / übertragen
 ZZ / ZQ                 - speichern+verlassen / verlassen ohne speichern
 :e datei                - Datei öffnen
 :w !sudo tee %           - Datei mit sudo speichern (wenn ohne sudo geöffnet)
+Ctrl-z, sudo -v, fg      - sudo-Passwort abgelaufen: suspendieren, cachen, zurück, dann :w !sudo tee % > /dev/null
 Ctrl-o / Ctrl-i          - vorherige / nächste Cursor-Position (Jumplist)
 qa ... q / @a             - Makro in Register a aufnehmen / abspielen
 @@                       - letztes Makro wiederholen
