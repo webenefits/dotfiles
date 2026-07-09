@@ -26,6 +26,7 @@ curl -sL https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main/b
 | tldr | man | `apt install tealdeer` (Binary `tldr`) |
 | chafa | Bildvorschau in yazi | Binary von hpjansson.org (apt-Version zu alt) |
 | neovim | vim / nano | `apt install neovim` |
+| lnav | tail / less (Logs) | `apt install lnav` |
 
 Zusätzlich installiert das Script den `cheat`-Wrapper nach `~/.local/bin/` und die Cheatsheets nach `~/.cheatsheets/` (siehe [Cheatsheets](#cheatsheets)).
 
@@ -49,6 +50,7 @@ Das Bootstrap-Script ist idempotent: erneutes Ausführen aktualisiert Tools, Con
 | `man` | `tldr` | `pacman -S tealdeer` / `apt install tealdeer` (Binary `tldr`) | `tldr <command>`, `tldr --update` |
 | Bildvorschau (yazi) | `chafa` | `pacman -S chafa` / Debian/Ubuntu: statisches Binary von hpjansson.org (apt-Version < 1.16 kennt yazis `--probe` nicht) | Fallback-Adapter für yazi ohne Kitty-/Sixel-Grafik |
 | `vim`/`nano` | `neovim` | `pacman -S neovim` / `apt install neovim` | `nvim`; als `$EDITOR` gesetzt (von yazi genutzt), Alias `vim=nvim` |
+| `tail -f`/`less` (Logs) | `lnav` | `pacman -S lnav` / `apt install lnav` | `lnav /var/log/…`; erkennt Log-Formate automatisch, Zeitleiste, SQL-Abfragen auf Logs |
 
 ### yazi im Detail
 
