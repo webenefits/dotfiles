@@ -3,7 +3,10 @@
 # ~/.local/bin im PATH (u. a. für cheat)
 fish_add_path -g "$HOME/.local/bin"
 
-alias ls='eza'
+# ls -> eza, but don't override an existing eza alias (e.g. CachyOS default)
+if type -q eza; and not functions ls 2>/dev/null | string match -q -- '*eza*'
+    alias ls='eza -l --color=always --group-directories-first --icons'
+end
 alias top='btop'
 alias df='duf'
 
