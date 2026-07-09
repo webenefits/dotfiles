@@ -80,7 +80,8 @@ ma                    - Marke 'a' setzen
 `a / 'a                - zu Marke a springen (exakt / Zeilenanfang)
 :marks                - Markenliste anzeigen
 "ayy / "ap             - in Register a kopieren / einfügen
-"+y / "+p               - in/aus Systemzwischenablage
+"+y / "+p               - explizit in/aus Systemzwischenablage
+:set clipboard=unnamedplus - "+ als Standard-Register: y/p nutzen direkt die Systemzwischenablage
 :reg                  - Registerinhalt anzeigen
 
 ## Fenster & Buffer
