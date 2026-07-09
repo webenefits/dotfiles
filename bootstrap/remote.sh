@@ -128,6 +128,9 @@ fi
 # Shell-Configs herunterladen und per source einbinden (idempotent).
 MARK_START="# --- dotfiles ---"
 MARK_END="# --- dotfiles: end ---"
+# Legacy-Start-Marker aus der Zeit vor der Config-Auslagerung (Inline-Block).
+# Wird mitentfernt, damit alte Alias-/Funktionsdefinitionen nicht doppelt bleiben.
+MARK_LEGACY="# --- dotfiles: tool aliases ---"
 
 # fügt eine Import-Zeile zwischen den Markern ein, ersetzt vorhandenen Block
 add_import() {
@@ -135,8 +138,8 @@ add_import() {
     mkdir -p "$(dirname "$rc")" || return 1
     touch "$rc" || return 1
     tmp="$(mktemp)" || return 1
-    awk -v s="$MARK_START" -v e="$MARK_END" '
-        $0 == s { inblock = 1; next }
+    awk -v s="$MARK_START" -v s2="$MARK_LEGACY" -v e="$MARK_END" '
+        $0 == s || $0 == s2 { inblock = 1; next }
         $0 == e { inblock = 0; next }
         !inblock { print }
     ' "$rc" > "$tmp" || { rm -f "$tmp"; return 1; }
