@@ -118,6 +118,21 @@ install_shell_config() {
 echo "==> Shell-Config einbinden"
 try "shell-config" install_shell_config
 
+# cheat-Wrapper (~/.local/bin) und Cheatsheets (~/.cheatsheets) installieren.
+# Neue Sheets hier ergänzen (HTTP bietet kein Verzeichnislisting).
+CHEAT_SHEETS=(vim nano yazi)
+install_cheat() {
+    mkdir -p "$HOME/.local/bin" "$HOME/.cheatsheets" || return 1
+    curl -fsSL "$DOTFILES_RAW/cheatsheets/cheat" -o "$HOME/.local/bin/cheat" || return 1
+    chmod +x "$HOME/.local/bin/cheat" || return 1
+    local s
+    for s in "${CHEAT_SHEETS[@]}"; do
+        curl -fsSL "$DOTFILES_RAW/cheatsheets/sheets/$s.md" -o "$HOME/.cheatsheets/$s.md" || return 1
+    done
+}
+echo "==> cheat-Wrapper & Cheatsheets installieren"
+try "cheat" install_cheat
+
 echo
 if [ ${#FAILED[@]} -eq 0 ]; then
     echo "Fertig. Alles installiert. Neue Shell starten oder RC-Datei neu sourcen."

@@ -1,5 +1,8 @@
 # dotfiles: tool aliases & shell integration (fish)
 
+# ~/.local/bin im PATH (u. a. für cheat)
+fish_add_path -g "$HOME/.local/bin"
+
 alias ls='eza'
 alias top='btop'
 alias df='duf'

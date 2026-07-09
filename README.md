@@ -27,7 +27,11 @@ curl -sL https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main/b
 | chafa | Bildvorschau in yazi | `apt install chafa` |
 | neovim | vim / nano | `apt install neovim` |
 
-Die Shell-Integration (Aliase, `fzf`-/`zoxide`-Init, `y`-Wrapper) liegt in `shell/` und wird vom Bootstrap nach `~/.config/dotfiles/` geladen. In `~/.bashrc`, `~/.zshrc` (falls vorhanden) und `~/.config/fish/config.fish` (falls fish installiert) wird idempotent nur eine `source`-Zeile eingetragen — Updates erfordern kein erneutes Bearbeiten der RC-Dateien. Schlägt die Installation eines Tools fehl, laufen die übrigen weiter; am Ende listet das Script alle Fehler auf.
+Zusätzlich installiert das Script den `cheat`-Wrapper nach `~/.local/bin/` und die Cheatsheets nach `~/.cheatsheets/` (siehe [Cheatsheets](#cheatsheets)).
+
+Die Shell-Integration (Aliase, `fzf`-/`zoxide`-Init, `y`-Wrapper, `~/.local/bin` im PATH) liegt in `shell/` und wird vom Bootstrap nach `~/.config/dotfiles/` geladen. In `~/.bashrc`, `~/.zshrc` (falls vorhanden) und `~/.config/fish/config.fish` (falls fish installiert) wird idempotent nur eine `source`-Zeile eingetragen — Updates erfordern kein erneutes Bearbeiten der RC-Dateien. Schlägt die Installation eines Tools fehl, laufen die übrigen weiter; am Ende listet das Script alle Fehler auf.
+
+Das Bootstrap-Script ist idempotent: erneutes Ausführen aktualisiert Tools, Configs und Cheatsheets, ohne Bestehendes zu zerstören.
 
 ## Tool-Cheatsheet
 
@@ -62,6 +66,20 @@ Bildvorschau nativ via Kitty-Protokoll, iTerm2, Sixel oder Überzug++. Code-Date
 **cd-on-exit**
 Der `y`-Wrapper (offizielle Shell-Funktion, wird vom Bootstrap in die Shell-Config eingetragen) wechselt beim Beenden ins zuletzt besuchte Verzeichnis — yazi immer über `y` statt `yazi` starten.
 
+## Cheatsheets
+
+Der `cheat`-Wrapper zeigt Cheatsheets an und durchsucht sie per `fzf` (Preview via `bat`):
+
+```bash
+cheat              # Cheatsheet auswählen und anzeigen
+cheat vim          # direkt vim.md anzeigen (fuzzy-Match auf Dateiname)
+cheat vim suchen   # in vim.md nach "suchen" filtern, gewählte Zeile in die Zwischenablage
+```
+
+Enthaltene Sheets: `vim`, `nano`, `yazi`. Neue Sheets als `cheatsheets/sheets/<name>.md` ablegen und in `bootstrap/remote.sh` (`CHEAT_SHEETS`) ergänzen.
+
+Der Wrapper landet unter `~/.local/bin/cheat`, die Sheets unter `~/.cheatsheets/`. **Voraussetzungen:** `fish` (Shebang), `fzf` und `bat`/`batcat` — `fzf` und `bat` bringt das Bootstrap mit; ohne `fish` bleiben die Sheets per `bat ~/.cheatsheets/<name>.md` lesbar. Ohne TTY (z. B. aus KRunner) öffnet sich der Wrapper in einem Terminal (`xdg-terminal-exec`/`konsole`).
+
 ## Struktur
 
 ```
@@ -72,6 +90,12 @@ shell/
     aliases.sh     ← Aliase & Integration für bash/zsh (→ ~/.config/dotfiles/aliases.sh)
   fish/
     config.fish    ← Aliase & Integration für fish (→ ~/.config/dotfiles/config.fish)
+cheatsheets/
+  cheat            ← fzf-Wrapper (→ ~/.local/bin/cheat)
+  sheets/          ← Cheatsheet-Inhalte (→ ~/.cheatsheets/)
+    vim.md
+    nano.md
+    yazi.md
 ```
 
-Die Dateien unter `shell/` sind die Single Source of Truth; das Bootstrap-Script lädt sie herunter und bindet sie per `source` ein.
+Die Dateien unter `shell/` und `cheatsheets/` sind die Single Source of Truth; das Bootstrap-Script lädt sie herunter und bindet sie ein.

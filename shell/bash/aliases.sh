@@ -1,5 +1,11 @@
 # dotfiles: tool aliases & shell integration (bash/zsh)
 
+# ~/.local/bin im PATH (u. a. für cheat)
+case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) PATH="$HOME/.local/bin:$PATH" ;;
+esac
+
 alias ls='eza'
 alias top='btop'
 alias df='duf'

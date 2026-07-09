@@ -1,0 +1,55 @@
+#!/usr/bin/env fish
+# cheat: show a cheatsheet; fuzzy-search with query args
+# When launched without a TTY (e.g. from KRunner), re-exec inside a terminal
+
+if not isatty stdin
+    set -x CHEAT_HOLD 1
+    if command -q xdg-terminal-exec
+        exec xdg-terminal-exec (status filename) $argv
+    end
+    exec konsole -e (status filename) $argv
+end
+
+set -l dir "$HOME/.cheatsheets"
+
+if not test -d "$dir"
+    echo "cheat: $dir nicht gefunden" >&2
+    exit 1
+end
+
+# Debian/Ubuntu: bat binary heißt batcat
+set -l bat bat
+if not command -q bat; and command -q batcat
+    set bat batcat
+end
+
+set -l file (command ls "$dir" | fzf \
+    --query "$argv[1]" \
+    --select-1 --exit-0 \
+    --preview "$bat --color=always --style=plain '$dir'/{}" \
+    --preview-window 'right,70%')
+
+test -n "$file"; or exit
+
+if test (count $argv) -lt 2
+    $bat --style=plain "$dir/$file"
+    exit
+end
+
+set -l pick (grep -n . "$dir/$file" | fzf \
+    --query "$argv[2..]" \
+    --delimiter : \
+    --with-nth 2.. \
+    --layout reverse \
+    --preview "$bat --color=always --style=plain --highlight-line {1} '$dir/$file'" \
+    --preview-window "right,70%,+{1}-/2")
+
+if test -n "$pick"
+    set -l line (string split -m 1 -f 2 : -- $pick)
+    echo $line
+    echo -n $line | fish_clipboard_copy
+    # keep the terminal open when launched from KRunner
+    if set -q CHEAT_HOLD
+        read -s -n 1 -P 'Kopiert – beliebige Taste zum Schließen '
+    end
+end
