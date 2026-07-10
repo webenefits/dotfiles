@@ -195,7 +195,10 @@ install_cheat() {
     # Beim Update den ganzen Ordner neu aufbauen, damit entfernte Sheets verschwinden.
     rm -rf "$sheet_dir" || return 1
     # Alt-Verzeichnis der Pre-XDG-Variante entfernen (Migration).
-    rm -rf "$HOME/.cheatsheets" || return 1
+    if [ -d "$HOME/.cheatsheets" ]; then
+        echo "    Cheatsheets von ~/.cheatsheets nach $sheet_dir verschoben"
+        rm -rf "$HOME/.cheatsheets" || return 1
+    fi
     mkdir -p "$HOME/.local/bin" "$sheet_dir" || return 1
     curl -fsSL "$DOTFILES_RAW/cheatsheets/cheat" -o "$HOME/.local/bin/cheat" || return 1
     chmod +x "$HOME/.local/bin/cheat" || return 1
