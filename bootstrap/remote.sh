@@ -187,16 +187,21 @@ install_nvim_config() {
 echo "==> nvim-Config einbinden"
 try "nvim-config" install_nvim_config
 
-# cheat-Wrapper (~/.local/bin) und Cheatsheets (~/.cheatsheets) installieren.
+# cheat-Wrapper (~/.local/bin) und Cheatsheets ($XDG_DATA_HOME/cheatsheets) installieren.
 # Neue Sheets hier ergänzen (HTTP bietet kein Verzeichnislisting).
 CHEAT_SHEETS=(git docker ddev composer typo3 shopware oxid vim nano yazi)
 install_cheat() {
-    mkdir -p "$HOME/.local/bin" "$HOME/.cheatsheets" || return 1
+    local sheet_dir="${XDG_DATA_HOME:-$HOME/.local/share}/cheatsheets"
+    # Beim Update den ganzen Ordner neu aufbauen, damit entfernte Sheets verschwinden.
+    rm -rf "$sheet_dir" || return 1
+    # Alt-Verzeichnis der Pre-XDG-Variante entfernen (Migration).
+    rm -rf "$HOME/.cheatsheets" || return 1
+    mkdir -p "$HOME/.local/bin" "$sheet_dir" || return 1
     curl -fsSL "$DOTFILES_RAW/cheatsheets/cheat" -o "$HOME/.local/bin/cheat" || return 1
     chmod +x "$HOME/.local/bin/cheat" || return 1
     local s
     for s in "${CHEAT_SHEETS[@]}"; do
-        curl -fsSL "$DOTFILES_RAW/cheatsheets/sheets/$s.md" -o "$HOME/.cheatsheets/$s.md" || return 1
+        curl -fsSL "$DOTFILES_RAW/cheatsheets/sheets/$s.md" -o "$sheet_dir/$s.md" || return 1
     done
 }
 echo "==> cheat-Wrapper & Cheatsheets installieren"

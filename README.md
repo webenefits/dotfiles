@@ -30,7 +30,7 @@ Auf Arch/CachyOS liegen alle Tools in den offiziellen Repos (`pacman`). Auf Debi
 | neovim | vim / nano | `neovim` | `apt install neovim` |
 | lnav | tail / less (Logs) | `lnav` | `apt install lnav` |
 
-Zusätzlich installiert das Script den `cheat`-Wrapper nach `~/.local/bin/` und die Cheatsheets nach `~/.cheatsheets/` (siehe [Cheatsheets](#cheatsheets)).
+Zusätzlich installiert das Script den `cheat`-Wrapper nach `~/.local/bin/` und die Cheatsheets nach `~/.local/share/cheatsheets/` (`$XDG_DATA_HOME`, siehe [Cheatsheets](#cheatsheets)).
 
 Die Shell-Integration (Aliase, `fzf`-/`zoxide`-Init, `y`-Wrapper, `~/.local/bin` im PATH) liegt in `shell/` und wird vom Bootstrap nach `~/.config/dotfiles/` geladen. In `~/.bashrc`, `~/.zshrc` (falls vorhanden) und `~/.config/fish/config.fish` (falls fish installiert) wird idempotent nur eine `source`-Zeile eingetragen — Updates erfordern kein erneutes Bearbeiten der RC-Dateien. Die nvim-Optionen (`nvim/init.lua`, u. a. `clipboard=unnamedplus`) landen nach demselben Muster in `~/.config/dotfiles/nvim.lua` und werden per `dofile`-Zeile in `~/.config/nvim/init.lua` eingebunden; eine vorhandene `init.vim` wird nicht angetastet (Schritt wird dann übersprungen). Schlägt die Installation eines Tools fehl, laufen die übrigen weiter; am Ende listet das Script alle Fehler auf.
 
@@ -82,7 +82,7 @@ cheat vim suchen   # in vim.md nach "suchen" filtern, gewählte Zeile in die Zwi
 
 Enthaltene Sheets: `git`, `docker`, `ddev`, `composer`, `typo3`, `shopware`, `oxid`, `vim`, `nano`, `yazi`. Neue Sheets als `cheatsheets/sheets/<name>.md` ablegen und in `bootstrap/remote.sh` (`CHEAT_SHEETS`) ergänzen.
 
-Der Wrapper landet unter `~/.local/bin/cheat`, die Sheets unter `~/.cheatsheets/`. **Voraussetzungen:** `fish` (Shebang), `fzf` und `bat`/`batcat` — `fzf` und `bat` bringt das Bootstrap mit; ohne `fish` bleiben die Sheets per `bat ~/.cheatsheets/<name>.md` lesbar. Ohne TTY (z. B. aus KRunner) öffnet sich der Wrapper in einem Terminal (`xdg-terminal-exec`/`konsole`).
+Der Wrapper landet unter `~/.local/bin/cheat`, die Sheets unter `~/.local/share/cheatsheets/` (`$XDG_DATA_HOME`). Bei jedem Bootstrap-Lauf wird dieser Ordner komplett neu aufgebaut, damit entfernte Sheets verschwinden; ein evtl. vorhandenes Alt-Verzeichnis `~/.cheatsheets` wird migriert (gelöscht). **Voraussetzungen:** `fish` (Shebang), `fzf` und `bat`/`batcat` — `fzf` und `bat` bringt das Bootstrap mit; ohne `fish` bleiben die Sheets per `bat ~/.local/share/cheatsheets/<name>.md` lesbar. Ohne TTY (z. B. aus KRunner) öffnet sich der Wrapper in einem Terminal (`xdg-terminal-exec`/`konsole`).
 
 ## Struktur
 
@@ -98,7 +98,7 @@ nvim/
   init.lua         ← nvim-Optionen (→ ~/.config/dotfiles/nvim.lua, via dofile in ~/.config/nvim/init.lua)
 cheatsheets/
   cheat            ← fzf-Wrapper (→ ~/.local/bin/cheat)
-  sheets/          ← Cheatsheet-Inhalte (→ ~/.cheatsheets/)
+  sheets/          ← Cheatsheet-Inhalte (→ ~/.local/share/cheatsheets/)
     vim.md
     nano.md
     yazi.md

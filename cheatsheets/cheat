@@ -10,7 +10,9 @@ if not isatty stdin
     exec konsole -e (status filename) $argv
 end
 
-set -l dir "$HOME/.cheatsheets"
+set -l data_home $XDG_DATA_HOME
+test -n "$data_home"; or set data_home "$HOME/.local/share"
+set -l dir "$data_home/cheatsheets"
 
 if not test -d "$dir"
     echo "cheat: $dir nicht gefunden" >&2
