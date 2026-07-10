@@ -189,7 +189,7 @@ try "nvim-config" install_nvim_config
 
 # cheat-Wrapper (~/.local/bin) und Cheatsheets (~/.cheatsheets) installieren.
 # Neue Sheets hier ergänzen (HTTP bietet kein Verzeichnislisting).
-CHEAT_SHEETS=(git docker ddev composer typo3 shopware oxid vim nano yazi)
+CHEAT_SHEETS=(git docker ddev composer typo3 shopware oxid vim lazyvim nano yazi)
 install_cheat() {
     mkdir -p "$HOME/.local/bin" "$HOME/.cheatsheets" || return 1
     curl -fsSL "$DOTFILES_RAW/cheatsheets/cheat" -o "$HOME/.local/bin/cheat" || return 1
