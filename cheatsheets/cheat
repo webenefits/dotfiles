@@ -30,7 +30,10 @@ file=$(command ls "$dir" | fzf \
     --preview "$bat --color=always --style=plain '$dir'/{}" \
     --preview-window 'right,70%')
 
-[ -n "$file" ] || exit
+if [ -z "$file" ]; then
+    [ -n "${1:-}" ] && echo "cheat: kein Sheet passt zu '$1' (verfügbar: $(command ls "$dir" | sed 's/\.md$//' | paste -sd ' ' -))" >&2
+    exit 1
+fi
 
 if [ "$#" -lt 2 ]; then
     "$bat" --style=plain "$dir/$file"
