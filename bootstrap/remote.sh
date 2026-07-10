@@ -212,7 +212,14 @@ try "cheat" install_cheat
 
 echo
 if [ ${#FAILED[@]} -eq 0 ]; then
-    echo "Fertig. Alles installiert. Neue Shell starten oder RC-Datei neu sourcen."
+    echo "Fertig. Alles installiert. Neue Shell starten oder die aktive Config neu sourcen:"
+    echo "  bash:  source ~/.bashrc"
+    if [ -f "$HOME/.zshrc" ]; then
+        echo "  zsh:   source ~/.zshrc"
+    fi
+    if command -v fish &>/dev/null || [ -f "$HOME/.config/fish/config.fish" ]; then
+        echo "  fish:  source ~/.config/fish/config.fish"
+    fi
 else
     echo "Fertig, aber Folgendes ist fehlgeschlagen:"
     printf '  - %s\n' "${FAILED[@]}"
