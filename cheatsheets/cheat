@@ -24,16 +24,21 @@ if ! command -v bat >/dev/null 2>&1 && command -v batcat >/dev/null 2>&1; then
     bat=batcat
 fi
 
-file=$(command ls "$dir" | fzf \
+sheets=$(command ls "$dir")
+
+# If a sheet-name query is given but matches no sheet, drop it and open the
+# full picker as if no argument had been passed.
+if [ -n "${1:-}" ] && ! printf '%s\n' "$sheets" | fzf --filter "$1" | grep -q .; then
+    set --
+fi
+
+file=$(printf '%s\n' "$sheets" | fzf \
     --query "${1:-}" \
     --select-1 --exit-0 \
     --preview "$bat --color=always --style=plain '$dir'/{}" \
     --preview-window 'right,70%')
 
-if [ -z "$file" ]; then
-    [ -n "${1:-}" ] && echo "cheat: kein Sheet passt zu '$1' (verfügbar: $(command ls "$dir" | sed 's/\.md$//' | paste -sd ' ' -))" >&2
-    exit 1
-fi
+[ -n "$file" ] || exit
 
 if [ "$#" -lt 2 ]; then
     "$bat" --style=plain "$dir/$file"
