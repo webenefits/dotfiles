@@ -80,7 +80,7 @@ cheat vim          # direkt vim.md anzeigen (fuzzy-Match auf Dateiname)
 cheat vim suchen   # in vim.md nach "suchen" filtern, gewählte Zeile in die Zwischenablage
 ```
 
-Enthaltene Sheets: `git`, `docker`, `ddev`, `composer`, `typo3`, `shopware`, `oxid`, `vim`, `nano`, `yazi`. Neue Sheets als `cheatsheets/sheets/<name>.md` ablegen und in `bootstrap/remote.sh` (`CHEAT_SHEETS`) ergänzen.
+Enthaltene Sheets: `git`, `docker`, `ddev`, `composer`, `typo3`, `shopware`, `oxid`, `vim`, `lazyvim`, `nano`, `yazi`. Neue Sheets als `cheatsheets/sheets/<name>.md` ablegen und in `bootstrap/remote.sh` (`CHEAT_SHEETS`) ergänzen.
 
 Der Wrapper landet unter `~/.local/bin/cheat`, die Sheets unter `~/.local/share/cheatsheets/` (`$XDG_DATA_HOME`). Bei jedem Bootstrap-Lauf wird dieser Ordner komplett neu aufgebaut, damit entfernte Sheets verschwinden; ein evtl. vorhandenes Alt-Verzeichnis `~/.cheatsheets` wird migriert (gelöscht). **Voraussetzungen:** `fish` (Shebang), `fzf` und `bat`/`batcat` — `fzf` und `bat` bringt das Bootstrap mit; ohne `fish` bleiben die Sheets per `bat ~/.local/share/cheatsheets/<name>.md` lesbar. Ohne TTY (z. B. aus KRunner) öffnet sich der Wrapper in einem Terminal (`xdg-terminal-exec`/`konsole`).
 
@@ -100,6 +100,7 @@ cheatsheets/
   cheat            ← fzf-Wrapper (→ ~/.local/bin/cheat)
   sheets/          ← Cheatsheet-Inhalte (→ ~/.local/share/cheatsheets/)
     vim.md
+    lazyvim.md
     nano.md
     yazi.md
     git.md

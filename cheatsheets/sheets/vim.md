@@ -20,6 +20,9 @@ Ctrl-f / Ctrl-b      - ganze Seite runter / hoch
 gd / gD             - zu lokaler / globaler Deklaration springen
 `` / ''              - zur Position vor dem letzten Sprung (exakt / Zeile)
 g; / g,             - zur letzten / nächsten Änderungsposition (Changelist)
+]<Space> / [<Space>  - Leerzeile darunter / darüber einfügen, Cursor bleibt (nvim)
+]a / [a             - nächste / vorherige Datei der Argumentliste (nvim)
+]t / [t             - nächster / vorheriger Tag (nvim)
 
 ## Einfügemodus
 i / I               - vor Cursor / am Zeilenanfang einfügen
@@ -62,6 +65,8 @@ J / gJ               - Zeile darunter anfügen (mit/ohne Leerzeichen)
 xp                   - zwei Zeichen vertauschen
 >> / <<              - Zeile ein-/ausrücken
 gg=G                 - gesamten Buffer neu einrücken
+gcc                  - Zeile aus-/einkommentieren (nvim)
+gc<motion>           - Bereich kommentieren, z. B. gcap für den Absatz (nvim)
 
 ## Visueller Modus
 v / V / Ctrl-v        - Zeichen / Zeile / Block visuell
@@ -74,6 +79,10 @@ gv                    - letzte Auswahl wiederherstellen
 aw / ab / aB          - Wort / ()-Block / {}-Block auswählen
 iw / ib / iB          - Wort / ()-Block / {}-Block ohne Umschließung
 I / A (nach Ctrl-v)    - Block-Einfügen am Anfang / Ende der Auswahl
+gc                    - Auswahl aus-/einkommentieren (nvim)
+an / in               - Treesitter-Knoten außen / innen auswählen (nvim)
+]n / [n               - Auswahl zum nächsten / vorherigen Knoten (nvim)
+]N / [N               - Auswahl zum nächsten / vorherigen Geschwisterknoten (nvim)
 
 ## Marken & Register
 ma                    - Marke 'a' setzen
@@ -95,6 +104,12 @@ Ctrl-w =                - alle Fenster gleich groß
 :bn / :bp              - nächster / vorheriger Buffer
 :ls / :buffers          - Buffer-Liste
 :bd                    - Buffer schließen
+]b / [b                 - nächster / vorheriger Buffer (nvim)
+]B / [B                 - letzter / erster Buffer (nvim)
+]q / [q                 - nächster / vorheriger Quickfix-Eintrag (nvim)
+]Q / [Q                 - letzter / erster Quickfix-Eintrag (nvim)
+]l / [l                 - nächster / vorheriger Location-List-Eintrag (nvim)
+]L / [L                 - letzter / erster Location-List-Eintrag (nvim)
 
 ## Tabs
 :tabnew                - neuen Tab öffnen
@@ -112,6 +127,20 @@ zR / zM                - alle Folds öffnen / schließen
 do / dp                - Unterschied holen / übertragen
 :diffthis              - aktuelles Fenster in Diff-Modus
 
+## LSP & Diagnose (nvim)
+grn                    - Symbol umbenennen (vim.lsp.buf.rename)
+grr                    - Referenzen auflisten (vim.lsp.buf.references)
+gri                    - zur Implementierung springen (vim.lsp.buf.implementation)
+gra                    - Code-Action anbieten (vim.lsp.buf.code_action)
+grt                    - zur Typdefinition springen (vim.lsp.buf.type_definition)
+grx                    - Codelens ausführen (vim.lsp.codelens.run)
+gO                     - Symbole der Datei auflisten (vim.lsp.buf.document_symbol)
+Ctrl-s (Insert)         - Signatur-Hilfe einblenden (vim.lsp.buf.signature_help)
+]d / [d                 - nächste / vorherige Diagnose im Buffer
+]D / [D                 - letzte / erste Diagnose im Buffer
+Ctrl-w d                - Diagnose unter dem Cursor als Popup
+K                      - kein LSP-Hover: bleibt keywordprg (LazyVim mappt K auf hover)
+
 ## Sonstiges
 :w / :q / :wq / :q!    - speichern / verlassen / speichern+verlassen / erzwingen
 ZZ / ZQ                 - speichern+verlassen / verlassen ohne speichern
@@ -122,3 +151,15 @@ Ctrl-o / Ctrl-i          - vorherige / nächste Cursor-Position (Jumplist)
 qa ... q / @a             - Makro in Register a aufnehmen / abspielen
 @@                       - letztes Makro wiederholen
 K                        - man-Page zu Wort unter Cursor öffnen
+gx                       - Pfad oder URL unter dem Cursor im System öffnen (nvim)
+Ctrl-l                    - Suchhighlight löschen und Anzeige neu zeichnen (nvim)
+Tab / Shift-Tab           - im Snippet vorwärts / rückwärts springen (nvim)
+:terminal                - Terminal im aktuellen Buffer öffnen (nvim)
+Ctrl-\ Ctrl-n             - aus dem Terminal in den Normal-Modus (nvim)
+:checkhealth             - Installation und Plugins auf Probleme prüfen (nvim)
+:Inspect                 - Highlight-Gruppen unter dem Cursor anzeigen (nvim)
+:InspectTree             - Treesitter-Syntaxbaum des Buffers anzeigen (nvim)
+:Man <befehl>            - man-Page in einem Buffer öffnen (nvim)
+:lua <code>              - Lua-Code ausführen (nvim)
+:=<ausdruck>             - Lua-Ausdruck auswerten und ausgeben (nvim)
+:Tutor                   - interaktives vim-Tutorial starten (nvim)
