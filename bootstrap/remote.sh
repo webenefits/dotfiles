@@ -210,6 +210,13 @@ install_cheat() {
 echo "==> cheat-Wrapper & Cheatsheets installieren"
 try "cheat" install_cheat
 
+# tldr-Cache füllen, damit der erste Aufruf ohne Nachladen funktioniert.
+# Nur wenn tealdeer erfolgreich installiert wurde.
+if command -v tldr &>/dev/null; then
+    echo "==> tldr-Cache aktualisieren"
+    try "tldr-cache" tldr --update
+fi
+
 echo
 if [ ${#FAILED[@]} -eq 0 ]; then
     echo "Fertig. Alles installiert. Neue Shell starten oder die aktive Config neu sourcen:"

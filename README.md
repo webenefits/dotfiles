@@ -30,7 +30,7 @@ Auf Arch/CachyOS liegen alle Tools in den offiziellen Repos (`pacman`). Auf Debi
 | neovim | vim / nano | `neovim` | `apt install neovim` |
 | lnav | tail / less (Logs) | `lnav` | `apt install lnav` |
 
-Zusätzlich installiert das Script den `cheat`-Wrapper nach `~/.local/bin/` und die Cheatsheets nach `~/.local/share/cheatsheets/` (`$XDG_DATA_HOME`, siehe [Cheatsheets](#cheatsheets)).
+Zusätzlich installiert das Script den `cheat`-Wrapper nach `~/.local/bin/` und die Cheatsheets nach `~/.local/share/cheatsheets/` (`$XDG_DATA_HOME`, siehe [Cheatsheets](#cheatsheets)). Ist `tldr` (tealdeer) installiert, füllt das Script am Ende per `tldr --update` den Cache, damit der erste Aufruf sofort funktioniert.
 
 Die Shell-Integration (Aliase, `fzf`-/`zoxide`-Init, `y`-Wrapper, `~/.local/bin` im PATH) liegt in `shell/` und wird vom Bootstrap nach `~/.config/dotfiles/` geladen. In `~/.bashrc`, `~/.zshrc` (falls vorhanden) und `~/.config/fish/config.fish` (falls fish installiert) wird idempotent nur eine `source`-Zeile eingetragen — Updates erfordern kein erneutes Bearbeiten der RC-Dateien. Die nvim-Optionen (`nvim/init.lua`, u. a. `clipboard=unnamedplus`) landen nach demselben Muster in `~/.config/dotfiles/nvim.lua` und werden per `dofile`-Zeile in `~/.config/nvim/init.lua` eingebunden; eine vorhandene `init.vim` wird nicht angetastet (Schritt wird dann übersprungen). Schlägt die Installation eines Tools fehl, laufen die übrigen weiter; am Ende listet das Script alle Fehler auf.
 
