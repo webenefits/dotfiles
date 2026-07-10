@@ -1,57 +1,63 @@
-#!/usr/bin/env fish
+#!/usr/bin/env bash
 # cheat: show a cheatsheet; fuzzy-search with query args
 # When launched without a TTY (e.g. from KRunner), re-exec inside a terminal
 
-if not isatty stdin
-    set -x CHEAT_HOLD 1
-    if command -q xdg-terminal-exec
-        exec xdg-terminal-exec (status filename) $argv
-    end
-    exec konsole -e (status filename) $argv
-end
+if [ ! -t 0 ]; then
+    export CHEAT_HOLD=1
+    if command -v xdg-terminal-exec >/dev/null 2>&1; then
+        exec xdg-terminal-exec "$0" "$@"
+    fi
+    exec konsole -e "$0" "$@"
+fi
 
-set -l data_home $XDG_DATA_HOME
-test -n "$data_home"; or set data_home "$HOME/.local/share"
-set -l dir "$data_home/cheatsheets"
+data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+dir="$data_home/cheatsheets"
 
-if not test -d "$dir"
+if [ ! -d "$dir" ]; then
     echo "cheat: $dir nicht gefunden" >&2
     exit 1
-end
+fi
 
 # Debian/Ubuntu: bat binary heißt batcat
-set -l bat bat
-if not command -q bat; and command -q batcat
-    set bat batcat
-end
+bat=bat
+if ! command -v bat >/dev/null 2>&1 && command -v batcat >/dev/null 2>&1; then
+    bat=batcat
+fi
 
-set -l file (command ls "$dir" | fzf \
-    --query "$argv[1]" \
+file=$(command ls "$dir" | fzf \
+    --query "${1:-}" \
     --select-1 --exit-0 \
     --preview "$bat --color=always --style=plain '$dir'/{}" \
     --preview-window 'right,70%')
 
-test -n "$file"; or exit
+[ -n "$file" ] || exit
 
-if test (count $argv) -lt 2
-    $bat --style=plain "$dir/$file"
+if [ "$#" -lt 2 ]; then
+    "$bat" --style=plain "$dir/$file"
     exit
-end
+fi
 
-set -l pick (grep -n . "$dir/$file" | fzf \
-    --query "$argv[2..]" \
+pick=$(grep -n . "$dir/$file" | fzf \
+    --query "${*:2}" \
     --delimiter : \
     --with-nth 2.. \
     --layout reverse \
     --preview "$bat --color=always --style=plain --highlight-line {1} '$dir/$file'" \
     --preview-window "right,70%,+{1}-/2")
 
-if test -n "$pick"
-    set -l line (string split -m 1 -f 2 : -- $pick)
-    echo $line
-    echo -n $line | fish_clipboard_copy
+if [ -n "$pick" ]; then
+    line=${pick#*:}
+    printf '%s\n' "$line"
+    # copy to clipboard (Wayland/X11, best effort)
+    if command -v wl-copy >/dev/null 2>&1; then
+        printf '%s' "$line" | wl-copy
+    elif command -v xclip >/dev/null 2>&1; then
+        printf '%s' "$line" | xclip -selection clipboard
+    elif command -v xsel >/dev/null 2>&1; then
+        printf '%s' "$line" | xsel --clipboard --input
+    fi
     # keep the terminal open when launched from KRunner
-    if set -q CHEAT_HOLD
-        read -s -n 1 -P 'Kopiert – beliebige Taste zum Schließen '
-    end
-end
+    if [ -n "${CHEAT_HOLD:-}" ]; then
+        read -rsn 1 -p 'Kopiert – beliebige Taste zum Schließen '
+    fi
+fi

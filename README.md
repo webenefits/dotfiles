@@ -82,7 +82,7 @@ cheat vim suchen   # in vim.md nach "suchen" filtern, gewählte Zeile in die Zwi
 
 Enthaltene Sheets: `git`, `regex`, `docker`, `ddev`, `composer`, `typo3`, `shopware`, `oxid`, `vim`, `lazyvim`, `nano`, `yazi`. Neue Sheets als `cheatsheets/sheets/<name>.md` ablegen und in `bootstrap/remote.sh` (`CHEAT_SHEETS`) ergänzen.
 
-Der Wrapper landet unter `~/.local/bin/cheat`, die Sheets unter `~/.local/share/cheatsheets/` (`$XDG_DATA_HOME`). Bei jedem Bootstrap-Lauf wird dieser Ordner komplett neu aufgebaut, damit entfernte Sheets verschwinden; ein evtl. vorhandenes Alt-Verzeichnis `~/.cheatsheets` wird migriert (gelöscht). **Voraussetzungen:** `fish` (Shebang), `fzf` und `bat`/`batcat` — `fzf` und `bat` bringt das Bootstrap mit; ohne `fish` bleiben die Sheets per `bat ~/.local/share/cheatsheets/<name>.md` lesbar. Ohne TTY (z. B. aus KRunner) öffnet sich der Wrapper in einem Terminal (`xdg-terminal-exec`/`konsole`).
+Der Wrapper landet unter `~/.local/bin/cheat`, die Sheets unter `~/.local/share/cheatsheets/` (`$XDG_DATA_HOME`). Bei jedem Bootstrap-Lauf wird dieser Ordner komplett neu aufgebaut, damit entfernte Sheets verschwinden; ein evtl. vorhandenes Alt-Verzeichnis `~/.cheatsheets` wird migriert (gelöscht). **Voraussetzungen:** `bash` (Shebang), `fzf` und `bat`/`batcat` — beide bringt das Bootstrap mit. Zum Kopieren der gewählten Zeile in die Zwischenablage wird `wl-copy` (Wayland), `xclip` oder `xsel` genutzt (best effort; ohne eines davon wird die Zeile nur ausgegeben). Ohne diese Tools bleiben die Sheets per `bat ~/.local/share/cheatsheets/<name>.md` lesbar. Ohne TTY (z. B. aus KRunner) öffnet sich der Wrapper in einem Terminal (`xdg-terminal-exec`/`konsole`).
 
 ## Struktur
 
