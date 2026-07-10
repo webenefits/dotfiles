@@ -13,11 +13,11 @@ fi
 data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
 dir="$data_home/cheatsheets"
 
+
 if [ ! -d "$dir" ]; then
     echo "cheat: $dir nicht gefunden" >&2
     exit 1
 fi
-
 # Debian/Ubuntu: bat binary heißt batcat
 bat=bat
 if ! command -v bat >/dev/null 2>&1 && command -v batcat >/dev/null 2>&1; then
