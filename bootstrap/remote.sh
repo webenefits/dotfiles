@@ -189,7 +189,7 @@ try "nvim-config" install_nvim_config
 
 # cheat-Wrapper (~/.local/bin) und Cheatsheets ($XDG_DATA_HOME/cheatsheets) installieren.
 # Neue Sheets hier ergänzen (HTTP bietet kein Verzeichnislisting).
-CHEAT_SHEETS=(git regex docker ddev composer typo3 shopware oxid vim lazyvim nano yazi)
+CHEAT_SHEETS=(git regex docker ddev composer typo3 shopware oxid vim lazyvim nano yazi screen)
 install_cheat() {
     local sheet_dir="${XDG_DATA_HOME:-$HOME/.local/share}/cheatsheets"
     # Beim Update den ganzen Ordner neu aufbauen, damit entfernte Sheets verschwinden.
