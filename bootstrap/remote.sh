@@ -124,9 +124,17 @@ if [ "$DISTRO" = debian ]; then
     echo "==> chafa installieren"
     try "chafa" install_chafa
 
-    # tealdeer: apt-Version (<= 1.6.1) laedt kaputtes tldr-Archiv (Issue #459),
-    # daher statisches Release-Binary von GitHub
+    # tealdeer: apt-Version < 1.8.0 laedt kaputtes tldr-Archiv (Issue #459).
+    # apt bevorzugen, wenn aktuell genug; sonst statisches Release-Binary von GitHub.
     install_tealdeer() {
+        local need=1.8.0 ver
+        if $SUDO apt-get install -y tealdeer; then
+            ver="$(tldr --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1)"
+            if [ -n "$ver" ] && dpkg --compare-versions "$ver" ge "$need"; then
+                return 0
+            fi
+            echo "  apt-tealdeer ${ver:-unbekannt} < ${need}, nutze GitHub-Binary" >&2
+        fi
         $SUDO curl -fL -o /usr/local/bin/tldr \
             https://github.com/tealdeer-rs/tealdeer/releases/latest/download/tealdeer-linux-x86_64-musl || return 1
         $SUDO chmod +x /usr/local/bin/tldr || return 1
