@@ -60,8 +60,8 @@ if [ "$DISTRO" = arch ]; then
     # Arch: alles inkl. eza/yazi/fzf/chafa aus den offiziellen Repos
     PKGS=(file bat btop duf mc fd eza yazi fzf zoxide tealdeer neovim lnav chafa)
 else
-    # Debian/Ubuntu: eza/yazi/fzf/chafa folgen unten gesondert
-    PKGS=(gpg wget unzip file bat btop duf mc fd-find zoxide tealdeer neovim lnav)
+    # Debian/Ubuntu: eza/yazi/fzf/chafa/tealdeer folgen unten gesondert
+    PKGS=(gpg wget unzip file bat btop duf mc fd-find zoxide neovim lnav)
 fi
 for pkg in "${PKGS[@]}"; do
     try "$pkg" pkg_install "$pkg"
@@ -123,6 +123,16 @@ if [ "$DISTRO" = debian ]; then
     }
     echo "==> chafa installieren"
     try "chafa" install_chafa
+
+    # tealdeer: apt-Version (<= 1.6.1) laedt kaputtes tldr-Archiv (Issue #459),
+    # daher statisches Release-Binary von GitHub
+    install_tealdeer() {
+        $SUDO curl -fL -o /usr/local/bin/tldr \
+            https://github.com/tealdeer-rs/tealdeer/releases/latest/download/tealdeer-linux-x86_64-musl || return 1
+        $SUDO chmod +x /usr/local/bin/tldr || return 1
+    }
+    echo "==> tealdeer installieren"
+    try "tealdeer" install_tealdeer
 fi
 
 # Shell-Configs herunterladen und per source einbinden (idempotent).
