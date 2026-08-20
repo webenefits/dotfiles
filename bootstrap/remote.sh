@@ -61,7 +61,7 @@ if [ "$DISTRO" = arch ]; then
     PKGS=(file bat btop duf mc fd eza yazi fzf zoxide tealdeer neovim lnav chafa)
 else
     # Debian/Ubuntu: eza/yazi/fzf/chafa/tealdeer folgen unten gesondert
-    PKGS=(gpg wget unzip file bat btop duf mc fd-find zoxide neovim lnav)
+    PKGS=(gpg wget file bat btop duf mc fd-find zoxide neovim lnav)
 fi
 for pkg in "${PKGS[@]}"; do
     try "$pkg" pkg_install "$pkg"
@@ -87,13 +87,17 @@ if [ "$DISTRO" = debian ]; then
     echo "==> eza installieren"
     try "eza" install_eza
 
-    # yazi: kein Debian-Paket, Binary-Release von GitHub
+    # yazi: kein Debian-Paket, offizielles APT-Repo einbinden (yazi-rs/builds)
     install_yazi() {
-        curl -fL -o /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.zip || return 1
-        unzip -o /tmp/yazi.zip -d /tmp/yazi || return 1
-        $SUDO mv /tmp/yazi/yazi-x86_64-unknown-linux-gnu/yazi /tmp/yazi/yazi-x86_64-unknown-linux-gnu/ya /usr/local/bin/ || return 1
-        $SUDO chmod +x /usr/local/bin/yazi /usr/local/bin/ya || return 1
-        rm -rf /tmp/yazi /tmp/yazi.zip
+        # Relikt der alten Installationsart entfernen: /usr/local/bin steht in
+        # PATH vor /usr/bin und würde sonst das apt-Paket weiter überdecken.
+        $SUDO rm -f /usr/local/bin/yazi /usr/local/bin/ya
+        curl -fsSL https://yazi-rs.github.io/builds/yazi-keyring.gpg \
+            | $SUDO tee /usr/share/keyrings/yazi-keyring.gpg > /dev/null || return 1
+        echo "deb [signed-by=/usr/share/keyrings/yazi-keyring.gpg] https://yazi-rs.github.io/builds/ stable main" \
+            | $SUDO tee /etc/apt/sources.list.d/yazi.list > /dev/null || return 1
+        $SUDO apt-get update -y || return 1
+        $SUDO apt-get install -y yazi
     }
     echo "==> yazi installieren"
     try "yazi" install_yazi
