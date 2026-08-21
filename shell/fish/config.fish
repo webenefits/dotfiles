@@ -3,10 +3,12 @@
 # ~/.local/bin im PATH (u. a. für cheat)
 fish_add_path -g "$HOME/.local/bin"
 
-# ls -> eza, but don't override an existing eza alias (e.g. CachyOS default)
-if type -q eza; and not functions ls 2>/dev/null | string match -q -- '*eza*'
-    alias ls='eza -l --color=always --group-directories-first --icons=always'
-end
+# ls -> eza
+alias ls='eza -al --color=always --group-directories-first --icons=always' # preferred listing
+alias la='eza -a --color=always --group-directories-first --icons=always'  # all files and dirs
+alias ll='eza -l --color=always --group-directories-first --icons=always'  # long format
+alias lt='eza -aT --color=always --group-directories-first --icons=always' # tree listing
+alias l.="eza -a | grep -e '^\.'"                                          # show only dotfiles
 alias top='btop'
 alias df='duf'
 
