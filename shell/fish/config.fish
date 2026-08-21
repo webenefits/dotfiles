@@ -4,9 +4,9 @@
 fish_add_path -g "$HOME/.local/bin"
 
 # ls -> eza
-alias ls='eza -al --color=always --group-directories-first --icons=always' # preferred listing
+alias ls='eza -alh --color=always --group-directories-first --icons=always' # preferred listing
 alias la='eza -a --color=always --group-directories-first --icons=always'  # all files and dirs
-alias ll='eza -lg --color=always --group-directories-first --icons=always' # long format incl. group
+alias ll='eza -lgh --color=always --group-directories-first --icons=always' # long format incl. group + header
 alias lt='eza -aT --color=always --group-directories-first --icons=always' # tree listing
 alias l.="eza -a | grep -e '^\.'"                                          # show only dotfiles
 alias top='btop'
