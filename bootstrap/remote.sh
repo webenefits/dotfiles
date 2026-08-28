@@ -276,6 +276,15 @@ install_micro_colorschemes() {
 echo "==> micro-Colorschemes installieren"
 try "micro-colorschemes" install_micro_colorschemes
 
+# micro-Syntax (Fallback-Highlighting für Dateien ohne bekannte Zuordnung):
+# reine Vendor-Datei ohne lokale Anpassung, daher immer überschreiben.
+install_micro_syntax() {
+    mkdir -p "$HOME/.config/micro/syntax" || return 1
+    curl -fsSL "$DOTFILES_RAW/micro/syntax/default.yaml" -o "$HOME/.config/micro/syntax/default.yaml" || return 1
+}
+echo "==> micro-Syntax (Fallback-Highlighting) installieren"
+try "micro-syntax" install_micro_syntax
+
 # cheat-Wrapper (~/.local/bin) und Cheatsheets ($XDG_DATA_HOME/cheatsheets) installieren.
 # Neue Sheets hier ergänzen (HTTP bietet kein Verzeichnislisting).
 CHEAT_SHEETS=(git regex docker ddev composer typo3 shopware oxid vim lazyvim nano yazi screen bitwarden)
