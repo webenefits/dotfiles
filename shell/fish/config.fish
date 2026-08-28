@@ -30,9 +30,13 @@ if type -q fzf
     fzf --fish | source
 end
 
-# neovim: als Standard-Editor (u. a. von yazi genutzt)
+# micro: als Standard-Editor (u. a. von yazi genutzt)
+if type -q micro
+    set -gx EDITOR micro
+end
+
+# neovim: weiterhin per `vim`-Alias nutzbar, aber nicht mehr Standard-Editor
 if type -q nvim
-    set -gx EDITOR nvim
     alias vim='nvim'
 end
 

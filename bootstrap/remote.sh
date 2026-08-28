@@ -58,10 +58,10 @@ esac
 echo "==> Pakete installieren"
 if [ "$DISTRO" = arch ]; then
     # Arch: alles inkl. eza/yazi/fzf/chafa aus den offiziellen Repos
-    PKGS=(file bat btop duf mc fd eza yazi fzf zoxide tealdeer neovim lnav chafa)
+    PKGS=(file bat btop duf mc fd eza yazi fzf zoxide tealdeer neovim micro lnav chafa)
 else
     # Debian/Ubuntu: eza/yazi/fzf/chafa/tealdeer folgen unten gesondert
-    PKGS=(gpg wget file bat btop duf mc fd-find zoxide neovim lnav)
+    PKGS=(gpg wget file bat btop duf mc fd-find zoxide neovim micro lnav)
 fi
 for pkg in "${PKGS[@]}"; do
     try "$pkg" pkg_install "$pkg"
@@ -208,6 +208,73 @@ install_nvim_config() {
 }
 echo "==> nvim-Config einbinden"
 try "nvim-config" install_nvim_config
+
+# micro-Config: Whole-File-Vergleich gegen den zuletzt bekannten Repo-Stand
+# ($CONFIG_DIR/micro-settings.json). Ohne lokale Änderungen seit dem letzten
+# Deploy wird automatisch aktualisiert; bei einem echten Konflikt (lokale
+# Änderung UND neuer Repo-Stand) wird interaktiv nachgefragt.
+install_micro_config() {
+    local target="$HOME/.config/micro/settings.json"
+    local managed="$CONFIG_DIR/micro-settings.json"
+    local tmp
+    mkdir -p "$HOME/.config/micro" "$CONFIG_DIR" || return 1
+    tmp="$(mktemp)" || return 1
+    curl -fsSL "$DOTFILES_RAW/micro/settings.json" -o "$tmp" || { rm -f "$tmp"; return 1; }
+
+    # keine lokale Config oder lokal bereits identisch zum neuen Stand
+    if [ ! -f "$target" ] || cmp -s "$target" "$tmp"; then
+        cp "$tmp" "$target" || { rm -f "$tmp"; return 1; }
+        mv "$tmp" "$managed"
+        return 0
+    fi
+
+    # Repo-Stand seit dem letzten Lauf unverändert -- lokale Änderungen bleiben unangetastet
+    if [ -f "$managed" ] && cmp -s "$tmp" "$managed"; then
+        rm -f "$tmp"
+        return 0
+    fi
+
+    # keine lokalen Änderungen seit dem letzten Deploy -- Update automatisch übernehmen
+    if [ -f "$managed" ] && cmp -s "$target" "$managed"; then
+        cp "$tmp" "$target" || { rm -f "$tmp"; return 1; }
+        mv "$tmp" "$managed"
+        return 0
+    fi
+
+    # Konflikt: lokale Änderungen vorhanden UND neuer Repo-Stand verfügbar
+    echo "  micro/settings.json: lokale Änderungen und Repo-Update gefunden" >&2
+    local choice
+    while true; do
+        echo "  [r] Repo-Version übernehmen  [l] lokale Version behalten  [d] Diff anzeigen" >&2
+        if ! read -r choice < /dev/tty 2>/dev/null; then
+            echo "  kein Terminal verfügbar, behalte lokale Version" >&2
+            choice=l
+        fi
+        case "$choice" in
+            [rR]) cp "$tmp" "$target" || { rm -f "$tmp"; return 1; }; break ;;
+            [lL]) break ;;
+            [dD]) diff -u "$target" "$tmp" >&2 || true ;;
+            *) echo "  bitte r/l/d wählen" >&2 ;;
+        esac
+    done
+    mv "$tmp" "$managed"
+}
+echo "==> micro-Config einbinden"
+try "micro-config" install_micro_config
+
+# micro-Colorschemes: reine Vendor-Dateien ohne lokale Anpassung, daher immer
+# überschreiben (kein Merge nötig). Verzeichnis wird nicht komplett neu aufgebaut,
+# da der Nutzer dort eigene, nicht von uns verwaltete Themes ablegen könnte.
+MICRO_COLORSCHEMES=(catppuccin-latte catppuccin-frappe catppuccin-macchiato catppuccin-mocha)
+install_micro_colorschemes() {
+    mkdir -p "$HOME/.config/micro/colorschemes" || return 1
+    local c
+    for c in "${MICRO_COLORSCHEMES[@]}"; do
+        curl -fsSL "$DOTFILES_RAW/micro/colorschemes/$c.micro" -o "$HOME/.config/micro/colorschemes/$c.micro" || return 1
+    done
+}
+echo "==> micro-Colorschemes installieren"
+try "micro-colorschemes" install_micro_colorschemes
 
 # cheat-Wrapper (~/.local/bin) und Cheatsheets ($XDG_DATA_HOME/cheatsheets) installieren.
 # Neue Sheets hier ergänzen (HTTP bietet kein Verzeichnislisting).

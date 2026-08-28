@@ -36,9 +36,13 @@ if command -v fzf >/dev/null 2>&1; then
     fi
 fi
 
-# neovim: als Standard-Editor (u. a. von yazi genutzt)
+# micro: als Standard-Editor (u. a. von yazi genutzt)
+if command -v micro >/dev/null 2>&1; then
+    export EDITOR=micro
+fi
+
+# neovim: weiterhin per `vim`-Alias nutzbar, aber nicht mehr Standard-Editor
 if command -v nvim >/dev/null 2>&1; then
-    export EDITOR=nvim
     alias vim='nvim'
 fi
 

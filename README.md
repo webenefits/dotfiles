@@ -27,12 +27,13 @@ Auf Arch/CachyOS liegen alle Tools in den offiziellen Repos (`pacman`). Auf Debi
 | zoxide | cd | `zoxide` | `apt install zoxide` |
 | tldr | man | `tealdeer` | `apt install tealdeer` (Binary `tldr`) |
 | chafa | Bildvorschau in yazi | `chafa` | Binary von hpjansson.org (apt-Version zu alt) |
-| neovim | vim / nano | `neovim` | `apt install neovim` |
+| micro | Standard-Editor (vim / nano) | `micro` | `apt install micro` |
+| neovim | vim / nano (weiterhin manuell nutzbar) | `neovim` | `apt install neovim` |
 | lnav | tail / less (Logs) | `lnav` | `apt install lnav` |
 
 Zusätzlich installiert das Script den `cheat`-Wrapper nach `~/.local/bin/` und die Cheatsheets nach `~/.local/share/cheatsheets/` (`$XDG_DATA_HOME`, siehe [Cheatsheets](#cheatsheets)). Ist `tldr` (tealdeer) installiert, füllt das Script am Ende per `tldr --update` den Cache, damit der erste Aufruf sofort funktioniert.
 
-Die Shell-Integration (Aliase, `fzf`-/`zoxide`-Init, `y`-Wrapper, `~/.local/bin` im PATH) liegt in `shell/` und wird vom Bootstrap nach `~/.config/dotfiles/` geladen. In `~/.bashrc`, `~/.zshrc` (falls vorhanden) und `~/.config/fish/config.fish` (falls fish installiert) wird idempotent nur eine `source`-Zeile eingetragen — Updates erfordern kein erneutes Bearbeiten der RC-Dateien. Die nvim-Optionen (`nvim/init.lua`, u. a. `clipboard=unnamedplus`) landen nach demselben Muster in `~/.config/dotfiles/nvim.lua` und werden per `dofile`-Zeile in `~/.config/nvim/init.lua` eingebunden; eine vorhandene `init.vim` wird nicht angetastet (Schritt wird dann übersprungen). Schlägt die Installation eines Tools fehl, laufen die übrigen weiter; am Ende listet das Script alle Fehler auf.
+Die Shell-Integration (Aliase, `fzf`-/`zoxide`-Init, `y`-Wrapper, `~/.local/bin` im PATH) liegt in `shell/` und wird vom Bootstrap nach `~/.config/dotfiles/` geladen. In `~/.bashrc`, `~/.zshrc` (falls vorhanden) und `~/.config/fish/config.fish` (falls fish installiert) wird idempotent nur eine `source`-Zeile eingetragen — Updates erfordern kein erneutes Bearbeiten der RC-Dateien. Die nvim-Optionen (`nvim/init.lua`, u. a. Zeilennummern und Colorscheme) landen nach demselben Muster in `~/.config/dotfiles/nvim.lua` und werden per `dofile`-Zeile in `~/.config/nvim/init.lua` eingebunden; eine vorhandene `init.vim` wird nicht angetastet (Schritt wird dann übersprungen). `micro` ist der Standard-Editor (`$EDITOR`, u. a. von yazi genutzt); seine Config (`micro/settings.json`) landet unter `~/.config/micro/settings.json`. Da es sich um eine einzelne JSON-Datei ohne Import-Mechanismus handelt, läuft die Aktualisierung über einen Whole-File-Vergleich gegen den zuletzt bekannten Repo-Stand (`~/.config/dotfiles/micro-settings.json`): ohne lokale Änderungen wird automatisch aktualisiert, bei einem echten Konflikt (lokale Änderung *und* neuer Repo-Stand) fragt das Script interaktiv nach (Repo übernehmen / lokale Version behalten / Diff anzeigen). Die Catppuccin-Themes (`micro/colorschemes/*.micro`, Standard: `catppuccin-macchiato`, siehe `settings.json`) landen unverändert unter `~/.config/micro/colorschemes/` — reine Vendor-Dateien ohne Merge-Logik, werden bei jedem Lauf überschrieben. Schlägt die Installation eines Tools fehl, laufen die übrigen weiter; am Ende listet das Script alle Fehler auf.
 
 Das Bootstrap-Script ist idempotent: erneutes Ausführen aktualisiert Tools, Configs und Cheatsheets, ohne Bestehendes zu zerstören.
 
@@ -51,7 +52,8 @@ Das Bootstrap-Script ist idempotent: erneutes Ausführen aktualisiert Tools, Con
 | `cd` | `zoxide` | `pacman -S zoxide` / `apt install zoxide` | `z <pattern>`, `zi`; Init: bash `eval "$(zoxide init bash)"`, fish `zoxide init fish \| source` |
 | `man` | `tldr` | `pacman -S tealdeer` / `apt install tealdeer` (Binary `tldr`) | `tldr <command>`, `tldr --update` |
 | Bildvorschau (yazi) | `chafa` | `pacman -S chafa` / Debian/Ubuntu: statisches Binary von hpjansson.org (apt-Version < 1.16 kennt yazis `--probe` nicht) | Fallback-Adapter für yazi ohne Kitty-/Sixel-Grafik |
-| `vim`/`nano` | `neovim` | `pacman -S neovim` / `apt install neovim` | `nvim`; als `$EDITOR` gesetzt (von yazi genutzt), Alias `vim=nvim` |
+| `vim`/`nano` | `micro` | `pacman -S micro` / `apt install micro` | `micro`; als `$EDITOR` gesetzt (von yazi genutzt) |
+| — | `neovim` (weiterhin verfügbar) | `pacman -S neovim` / `apt install neovim` | `nvim`, Alias `vim=nvim`; nicht mehr `$EDITOR` |
 | `tail -f`/`less` (Logs) | `lnav` | `pacman -S lnav` / `apt install lnav` | `lnav /var/log/…`; erkennt Log-Formate automatisch, Zeitleiste, SQL-Abfragen auf Logs |
 
 ### yazi im Detail
@@ -96,6 +98,13 @@ shell/
     config.fish    ← Aliase & Integration für fish (→ ~/.config/dotfiles/config.fish)
 nvim/
   init.lua         ← nvim-Optionen (→ ~/.config/dotfiles/nvim.lua, via dofile in ~/.config/nvim/init.lua)
+micro/
+  settings.json    ← micro-Config, Standard-Editor (→ ~/.config/micro/settings.json)
+  colorschemes/    ← Catppuccin-Themes (→ ~/.config/micro/colorschemes/)
+    catppuccin-latte.micro
+    catppuccin-frappe.micro
+    catppuccin-macchiato.micro
+    catppuccin-mocha.micro
 cheatsheets/
   cheat            ← fzf-Wrapper (→ ~/.local/bin/cheat)
   sheets/          ← Cheatsheet-Inhalte (→ ~/.local/share/cheatsheets/)
