@@ -8,7 +8,7 @@ esac
 
 alias ls='eza -alh --color=always --group-directories-first --icons=always' # preferred listing
 alias la='eza -a --color=always --group-directories-first --icons=always'  # all files and dirs
-alias ll='eza -algh --color=always --group-directories-first --icons=always' # long format incl. group + header
+alias ll='eza -aalgh --color=always --group-directories-first --icons=always' # long format incl. group + header, shows . and ..
 alias lt='eza -aT --color=always --group-directories-first --icons=always' # tree listing
 alias l.="eza -a | grep -e '^\.'"                                          # show only dotfiles
 alias top='btop'
