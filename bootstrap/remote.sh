@@ -29,14 +29,23 @@ fi
 
 FAILED=()
 
-# führt einen Schritt aus, sammelt Fehler statt abzubrechen
+# führt einen Schritt aus, sammelt Fehler statt abzubrechen.
+# Eine aufgerufene Funktion kann vor "return 1" LAST_TRY_REASON setzen, um der
+# Zusammenfassung am Ende einen kurzen Fehlgrund in Klammern mitzugeben.
+LAST_TRY_REASON=""
 try() {
     local label="$1"; shift
+    LAST_TRY_REASON=""
     if "$@"; then
         echo "  ✓ $label"
     else
-        echo "  ✗ $label fehlgeschlagen" >&2
-        FAILED+=("$label")
+        if [ -n "$LAST_TRY_REASON" ]; then
+            echo "  ✗ $label fehlgeschlagen ($LAST_TRY_REASON)" >&2
+            FAILED+=("$label ($LAST_TRY_REASON)")
+        else
+            echo "  ✗ $label fehlgeschlagen" >&2
+            FAILED+=("$label")
+        fi
     fi
 }
 
@@ -46,6 +55,9 @@ pkg_install() {
         arch)   $SUDO pacman -S --needed --noconfirm "$@" ;;
         debian) $SUDO apt-get install -y "$@" ;;
     esac
+    local status=$?
+    [ "$status" -ne 0 ] && LAST_TRY_REASON="Paketmanager-Fehler (Exit $status)"
+    return "$status"
 }
 
 echo "==> Paketquellen aktualisieren ($DISTRO)"
@@ -58,14 +70,65 @@ esac
 echo "==> Pakete installieren"
 if [ "$DISTRO" = arch ]; then
     # Arch: alles inkl. eza/yazi/fzf/chafa aus den offiziellen Repos
-    PKGS=(file bat btop duf mc fd eza yazi fzf zoxide tealdeer neovim micro lnav chafa)
+    # (micro folgt unten gesondert, mit Flatpak/Snap-Fallback)
+    PKGS=(file bat btop duf mc fd eza yazi fzf zoxide tealdeer neovim lnav chafa)
 else
     # Debian/Ubuntu: eza/yazi/fzf/chafa/tealdeer folgen unten gesondert
-    PKGS=(gpg wget file bat btop duf mc fd-find zoxide neovim micro lnav)
+    # (micro folgt unten gesondert, mit Flatpak/Snap-Fallback)
+    PKGS=(gpg wget file bat btop duf mc fd-find zoxide neovim lnav)
 fi
 for pkg in "${PKGS[@]}"; do
     try "$pkg" pkg_install "$pkg"
 done
+
+# micro: darf praktisch nicht fehlschlagen, daher mehrstufiger Fallback.
+# 1) natives Distro-Paket, 2) bereits installiertes Flatpak, 3) bereits
+# installiertes Snap, 4) Flatpak selbst nachinstallieren und darüber micro
+# ziehen. Bei Flatpak-Installation wird ein "micro"-Wrapper nach
+# ~/.local/bin gelegt, da Flatpak-Apps sonst nur über "flatpak run <id>"
+# erreichbar sind (Snap legt seinen Binary-Symlink bereits selbst unter
+# /snap/bin ab).
+MICRO_FLATPAK_ID="io.github.zyedidia.micro"
+install_micro_flatpak_wrapper() {
+    mkdir -p "$HOME/.local/bin" || return 1
+    printf '#!/usr/bin/env sh\nexec flatpak run %s "$@"\n' "$MICRO_FLATPAK_ID" \
+        > "$HOME/.local/bin/micro" || return 1
+    chmod +x "$HOME/.local/bin/micro"
+}
+install_micro_via_flatpak() {
+    flatpak remote-add --user --if-not-exists flathub \
+        https://dl.flathub.org/repo/flathub.flatpakrepo || return 1
+    flatpak install --user -y --noninteractive flathub "$MICRO_FLATPAK_ID" || return 1
+    install_micro_flatpak_wrapper
+}
+install_micro() {
+    if pkg_install micro; then
+        # Wrapper aus einem früheren Flatpak-Fallback-Lauf entfernen -- ~/.local/bin
+        # steht in PATH vor /usr/bin und würde das native Paket sonst weiter
+        # überdecken (gleiches Muster wie beim yazi-Fallback weiter unten).
+        if [ -f "$HOME/.local/bin/micro" ] && grep -q "flatpak run" "$HOME/.local/bin/micro" 2>/dev/null; then
+            rm -f "$HOME/.local/bin/micro"
+        fi
+        return 0
+    fi
+
+    # jede verfügbare Fallback-Stufe wird versucht, keine bricht die Kette ab
+    if command -v flatpak &>/dev/null && install_micro_via_flatpak; then
+        return 0
+    fi
+    if command -v snap &>/dev/null && $SUDO snap install micro --classic; then
+        return 0
+    fi
+    # keins von beiden vorhanden (oder beide fehlgeschlagen): Flatpak nachinstallieren
+    if ! command -v flatpak &>/dev/null && pkg_install flatpak && install_micro_via_flatpak; then
+        return 0
+    fi
+
+    LAST_TRY_REASON="Paket, Flatpak und Snap fehlgeschlagen"
+    return 1
+}
+echo "==> micro installieren (mit Flatpak/Snap-Fallback)"
+try "micro" install_micro
 
 # --- Debian/Ubuntu: Tools ohne (aktuelles) apt-Paket gesondert installieren ---
 if [ "$DISTRO" = debian ]; then
