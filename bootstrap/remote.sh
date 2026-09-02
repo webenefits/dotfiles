@@ -380,17 +380,22 @@ fi
 
 echo
 if [ ${#FAILED[@]} -eq 0 ]; then
-    echo "Fertig. Alles installiert. Neue Shell starten oder die aktive Config neu sourcen:"
-    echo "  bash:  source ~/.bashrc"
-    if [ -f "$HOME/.zshrc" ]; then
-        echo "  zsh:   source ~/.zshrc"
-    fi
-    if command -v fish &>/dev/null || [ -f "$HOME/.config/fish/config.fish" ]; then
-        echo "  fish:  source ~/.config/fish/config.fish"
-    fi
+    echo "Fertig. Alles installiert."
 else
     echo "Fertig, aber Folgendes ist fehlgeschlagen:"
     printf '  - %s\n' "${FAILED[@]}"
     echo "Bitte manuell prüfen."
+fi
+
+echo "Neue Shell starten oder die aktive Config neu sourcen:"
+echo "  bash:  source ~/.bashrc"
+if [ -f "$HOME/.zshrc" ]; then
+    echo "  zsh:   source ~/.zshrc"
+fi
+if command -v fish &>/dev/null || [ -f "$HOME/.config/fish/config.fish" ]; then
+    echo "  fish:  source ~/.config/fish/config.fish"
+fi
+
+if [ ${#FAILED[@]} -ne 0 ]; then
     exit 1
 fi
