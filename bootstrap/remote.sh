@@ -27,6 +27,37 @@ else
     exit 1
 fi
 
+# --- Server/Client-Modus (nur relevant für Debian/Ubuntu) ---
+# apt installiert "Recommends" standardmäßig mit. Bei yazi zieht das die
+# komplette Vorschau-Toolchain (ffmpeg, imagemagick, poppler-utils, 7zip)
+# inkl. GTK/Mesa/VA-API-Treibern nach — auf einem Server meist unerwünschter
+# Ballast, auf einem Desktop/Client aber sinnvoll (Datei-Vorschau in yazi).
+APT_RECOMMENDS_FLAG=()
+if [ "$DISTRO" = debian ]; then
+    DEFAULT_MODE="server"
+    systemctl get-default 2>/dev/null | grep -q graphical && DEFAULT_MODE="client"
+
+    MODE="$DEFAULT_MODE"
+    if [ -r /dev/tty ]; then
+        echo "==> System: Server oder Client?" >&2
+        echo "    Server: schlank, ohne Vorschau-Tools (kein ffmpeg/imagemagick/poppler-utils/7zip)." >&2
+        echo "    Client: mit Vorschau-Tools für Bilder/Videos/PDFs/Archive in yazi." >&2
+        printf "    [s] Server  [c] Client  (Enter = erkannter Default: %s) > " "$DEFAULT_MODE" >&2
+        if read -r ANSWER < /dev/tty 2>/dev/null; then
+            case "$ANSWER" in
+                [sS]) MODE="server" ;;
+                [cC]) MODE="client" ;;
+                "")   MODE="$DEFAULT_MODE" ;;
+                *)    echo "    Ungültige Eingabe, nutze Default: $DEFAULT_MODE" >&2 ;;
+            esac
+        fi
+    else
+        echo "==> Kein Terminal verfügbar, nutze erkannten Default: $DEFAULT_MODE" >&2
+    fi
+    echo "    → Modus: $MODE"
+    [ "$MODE" = server ] && APT_RECOMMENDS_FLAG=(--no-install-recommends)
+fi
+
 FAILED=()
 
 # führt einen Schritt aus, sammelt Fehler statt abzubrechen.
@@ -53,7 +84,7 @@ try() {
 pkg_install() {
     case "$DISTRO" in
         arch)   $SUDO pacman -S --needed --noconfirm "$@" ;;
-        debian) $SUDO apt-get install -y "$@" ;;
+        debian) $SUDO apt-get install -y "${APT_RECOMMENDS_FLAG[@]}" "$@" ;;
     esac
     local status=$?
     [ "$status" -ne 0 ] && LAST_TRY_REASON="Paketmanager-Fehler (Exit $status)"
@@ -135,7 +166,7 @@ if [ "$DISTRO" = debian ]; then
     # eza: Standard-Repo prüfen, sonst eigenes APT-Repo einbinden
     install_eza() {
         if apt-cache show eza &>/dev/null; then
-            $SUDO apt-get install -y eza
+            $SUDO apt-get install -y "${APT_RECOMMENDS_FLAG[@]}" eza
         else
             $SUDO mkdir -p /etc/apt/keyrings || return 1
             wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc \
@@ -144,7 +175,7 @@ if [ "$DISTRO" = debian ]; then
                 | $SUDO tee /etc/apt/sources.list.d/gierens.list > /dev/null || return 1
             $SUDO chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list || return 1
             $SUDO apt-get update -y || return 1
-            $SUDO apt-get install -y eza
+            $SUDO apt-get install -y "${APT_RECOMMENDS_FLAG[@]}" eza
         fi
     }
     echo "==> eza installieren"
@@ -160,7 +191,7 @@ if [ "$DISTRO" = debian ]; then
         echo "deb [signed-by=/usr/share/keyrings/yazi-keyring.gpg] https://yazi-rs.github.io/builds/ stable main" \
             | $SUDO tee /etc/apt/sources.list.d/yazi.list > /dev/null || return 1
         $SUDO apt-get update -y || return 1
-        $SUDO apt-get install -y yazi
+        $SUDO apt-get install -y "${APT_RECOMMENDS_FLAG[@]}" yazi
     }
     echo "==> yazi installieren"
     try "yazi" install_yazi
@@ -195,7 +226,7 @@ if [ "$DISTRO" = debian ]; then
     # apt bevorzugen, wenn aktuell genug; sonst statisches Release-Binary von GitHub.
     install_tealdeer() {
         local need=1.8.0 ver
-        if $SUDO apt-get install -y tealdeer; then
+        if $SUDO apt-get install -y "${APT_RECOMMENDS_FLAG[@]}" tealdeer; then
             ver="$(tldr --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1)"
             if [ -n "$ver" ] && dpkg --compare-versions "$ver" ge "$need"; then
                 return 0
