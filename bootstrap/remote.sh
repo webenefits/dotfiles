@@ -102,11 +102,11 @@ echo "==> Pakete installieren"
 if [ "$DISTRO" = arch ]; then
     # Arch: alles inkl. eza/yazi/fzf/chafa aus den offiziellen Repos
     # (micro folgt unten gesondert, mit Flatpak/Snap-Fallback)
-    PKGS=(file bat btop duf mc fd eza yazi fzf zoxide tealdeer neovim lnav chafa)
+    PKGS=(git file bat btop duf mc fd eza yazi fzf zoxide tealdeer neovim lnav chafa glow)
 else
-    # Debian/Ubuntu: eza/yazi/fzf/chafa/tealdeer folgen unten gesondert
+    # Debian/Ubuntu: eza/yazi/fzf/chafa/tealdeer/glow folgen unten gesondert
     # (micro folgt unten gesondert, mit Flatpak/Snap-Fallback)
-    PKGS=(gpg wget file bat btop duf mc fd-find zoxide neovim lnav)
+    PKGS=(git gpg wget file bat btop duf mc fd-find zoxide neovim lnav)
 fi
 for pkg in "${PKGS[@]}"; do
     try "$pkg" pkg_install "$pkg"
@@ -239,6 +239,24 @@ if [ "$DISTRO" = debian ]; then
     }
     echo "==> tealdeer installieren"
     try "tealdeer" install_tealdeer
+
+    # glow: Standard-Repo prüfen, sonst offizielles Charm-APT-Repo einbinden
+    install_glow() {
+        if apt-cache show glow &>/dev/null; then
+            $SUDO apt-get install -y "${APT_RECOMMENDS_FLAG[@]}" glow
+        else
+            $SUDO mkdir -p /etc/apt/keyrings || return 1
+            curl -fsSL https://repo.charm.sh/apt/gpg.key \
+                | gpg --dearmor | $SUDO tee /etc/apt/keyrings/charm.gpg > /dev/null || return 1
+            echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" \
+                | $SUDO tee /etc/apt/sources.list.d/charm.list > /dev/null || return 1
+            $SUDO chmod 644 /etc/apt/keyrings/charm.gpg /etc/apt/sources.list.d/charm.list || return 1
+            $SUDO apt-get update -y || return 1
+            $SUDO apt-get install -y "${APT_RECOMMENDS_FLAG[@]}" glow
+        fi
+    }
+    echo "==> glow installieren"
+    try "glow" install_glow
 fi
 
 # Shell-Configs herunterladen und per source einbinden (idempotent).
@@ -303,17 +321,17 @@ install_nvim_config() {
 echo "==> nvim-Config einbinden"
 try "nvim-config" install_nvim_config
 
-# micro-Config: Whole-File-Vergleich gegen den zuletzt bekannten Repo-Stand
-# ($CONFIG_DIR/micro-settings.json). Ohne lokale Änderungen seit dem letzten
-# Deploy wird automatisch aktualisiert; bei einem echten Konflikt (lokale
-# Änderung UND neuer Repo-Stand) wird interaktiv nachgefragt.
-install_micro_config() {
-    local target="$HOME/.config/micro/settings.json"
-    local managed="$CONFIG_DIR/micro-settings.json"
+# Einzelne Config-Dateien ohne Import-Mechanismus (micro, yazi): Whole-File-
+# Vergleich gegen den zuletzt bekannten Repo-Stand ($CONFIG_DIR/<managed>).
+# Ohne lokale Änderungen seit dem letzten Deploy wird automatisch aktualisiert;
+# bei einem echten Konflikt (lokale Änderung UND neuer Repo-Stand) wird
+# interaktiv nachgefragt.
+install_managed_file() {
+    local src="$1" target="$2" managed="$CONFIG_DIR/$3"
     local tmp
-    mkdir -p "$HOME/.config/micro" "$CONFIG_DIR" || return 1
+    mkdir -p "$(dirname "$target")" "$CONFIG_DIR" || return 1
     tmp="$(mktemp)" || return 1
-    curl -fsSL "$DOTFILES_RAW/micro/settings.json" -o "$tmp" || { rm -f "$tmp"; return 1; }
+    curl -fsSL "$DOTFILES_RAW/$src" -o "$tmp" || { rm -f "$tmp"; return 1; }
 
     # keine lokale Config oder lokal bereits identisch zum neuen Stand
     if [ ! -f "$target" ] || cmp -s "$target" "$tmp"; then
@@ -336,7 +354,7 @@ install_micro_config() {
     fi
 
     # Konflikt: lokale Änderungen vorhanden UND neuer Repo-Stand verfügbar
-    echo "  micro/settings.json: lokale Änderungen und Repo-Update gefunden" >&2
+    echo "  $src: lokale Änderungen und Repo-Update gefunden ($target)" >&2
     local choice
     while true; do
         echo "  [r] Repo-Version übernehmen  [l] lokale Version behalten  [d] Diff anzeigen" >&2
@@ -354,7 +372,7 @@ install_micro_config() {
     mv "$tmp" "$managed"
 }
 echo "==> micro-Config einbinden"
-try "micro-config" install_micro_config
+try "micro-config" install_managed_file micro/settings.json "$HOME/.config/micro/settings.json" micro-settings.json
 
 # micro-Colorschemes: reine Vendor-Dateien ohne lokale Anpassung, daher immer
 # überschreiben (kein Merge nötig). Verzeichnis wird nicht komplett neu aufgebaut,
@@ -378,6 +396,27 @@ install_micro_syntax() {
 }
 echo "==> micro-Syntax (Fallback-Highlighting) installieren"
 try "micro-syntax" install_micro_syntax
+
+# yazi-Config (Markdown-Vorschau via glow), gleiche Update-Logik wie micro
+echo "==> yazi-Config einbinden"
+try "yazi-config" install_managed_file yazi/yazi.toml "$HOME/.config/yazi/yazi.toml" yazi.toml
+
+# piper-Plugin für die glow-Vorschau. Idempotent: steht das Plugin bereits in
+# package.toml, stellt "ya pkg install" nur fehlende Dateien wieder her, statt
+# es erneut hinzuzufügen.
+install_yazi_piper() {
+    if ! command -v ya &>/dev/null; then
+        LAST_TRY_REASON="ya nicht gefunden"
+        return 1
+    fi
+    if grep -qF 'yazi-rs/plugins:piper' "$HOME/.config/yazi/package.toml" 2>/dev/null; then
+        ya pkg install
+    else
+        ya pkg add yazi-rs/plugins:piper
+    fi
+}
+echo "==> yazi-Plugin piper installieren"
+try "yazi-piper" install_yazi_piper
 
 # cheat-Wrapper (~/.local/bin) und Cheatsheets ($XDG_DATA_HOME/cheatsheets) installieren.
 # Neue Sheets hier ergänzen (HTTP bietet kein Verzeichnislisting).
