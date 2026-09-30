@@ -30,10 +30,11 @@ Auf Arch/CachyOS liegen alle Tools in den offiziellen Repos (`pacman`). Auf Debi
 | micro | Standard-Editor (vim / nano) | `micro` | `apt install micro`, Fallback: bereits installiertes Flatpak/Snap, sonst Flatpak-Nachinstallation |
 | neovim | vim / nano (weiterhin manuell nutzbar) | `neovim` | `apt install neovim` |
 | lnav | tail / less (Logs) | `lnav` | `apt install lnav` |
+| glow | Markdown-Viewer (+ Vorschau in yazi) | `glow` | `apt install glow` (+ Charm-APT-Repo als Fallback) |
 
 Zusätzlich installiert das Script den `cheat`-Wrapper nach `~/.local/bin/` und die Cheatsheets nach `~/.local/share/cheatsheets/` (`$XDG_DATA_HOME`, siehe [Cheatsheets](#cheatsheets)). Ist `tldr` (tealdeer) installiert, füllt das Script am Ende per `tldr --update` den Cache, damit der erste Aufruf sofort funktioniert.
 
-Die Shell-Integration (Aliase, `fzf`-/`zoxide`-Init, `y`-Wrapper, `~/.local/bin` im PATH) liegt in `shell/` und wird vom Bootstrap nach `~/.config/dotfiles/` geladen. In `~/.bashrc`, `~/.zshrc` (falls vorhanden) und `~/.config/fish/config.fish` (falls fish installiert) wird idempotent nur eine `source`-Zeile eingetragen — Updates erfordern kein erneutes Bearbeiten der RC-Dateien. Die nvim-Optionen (`nvim/init.lua`, u. a. Zeilennummern und Colorscheme) landen nach demselben Muster in `~/.config/dotfiles/nvim.lua` und werden per `dofile`-Zeile in `~/.config/nvim/init.lua` eingebunden; eine vorhandene `init.vim` wird nicht angetastet (Schritt wird dann übersprungen). `micro` ist der Standard-Editor (`$EDITOR`, u. a. von yazi genutzt); seine Config (`micro/settings.json`) landet unter `~/.config/micro/settings.json`. Da es sich um eine einzelne JSON-Datei ohne Import-Mechanismus handelt, läuft die Aktualisierung über einen Whole-File-Vergleich gegen den zuletzt bekannten Repo-Stand (`~/.config/dotfiles/micro-settings.json`): ohne lokale Änderungen wird automatisch aktualisiert, bei einem echten Konflikt (lokale Änderung *und* neuer Repo-Stand) fragt das Script interaktiv nach (Repo übernehmen / lokale Version behalten / Diff anzeigen). Die Catppuccin-Themes (`micro/colorschemes/*.micro`, Standard: `catppuccin-macchiato`, siehe `settings.json`) landen unverändert unter `~/.config/micro/colorschemes/` — reine Vendor-Dateien ohne Merge-Logik, werden bei jedem Lauf überschrieben. Schlägt die Installation eines Tools fehl, laufen die übrigen weiter; am Ende listet das Script alle Fehler auf, bei manchen (z. B. `micro`) inklusive kurzem Grund in Klammern.
+Die Shell-Integration (Aliase, `fzf`-/`zoxide`-Init, `y`-Wrapper, `~/.local/bin` im PATH) liegt in `shell/` und wird vom Bootstrap nach `~/.config/dotfiles/` geladen. In `~/.bashrc`, `~/.zshrc` (falls vorhanden) und `~/.config/fish/config.fish` (falls fish installiert) wird idempotent nur eine `source`-Zeile eingetragen — Updates erfordern kein erneutes Bearbeiten der RC-Dateien. Die nvim-Optionen (`nvim/init.lua`, u. a. Zeilennummern und Colorscheme) landen nach demselben Muster in `~/.config/dotfiles/nvim.lua` und werden per `dofile`-Zeile in `~/.config/nvim/init.lua` eingebunden; eine vorhandene `init.vim` wird nicht angetastet (Schritt wird dann übersprungen). `micro` ist der Standard-Editor (`$EDITOR`, u. a. von yazi genutzt); seine Config (`micro/settings.json`) landet unter `~/.config/micro/settings.json`. Da es sich um eine einzelne JSON-Datei ohne Import-Mechanismus handelt, läuft die Aktualisierung über einen Whole-File-Vergleich gegen den zuletzt bekannten Repo-Stand (`~/.config/dotfiles/micro-settings.json`): ohne lokale Änderungen wird automatisch aktualisiert, bei einem echten Konflikt (lokale Änderung *und* neuer Repo-Stand) fragt das Script interaktiv nach (Repo übernehmen / lokale Version behalten / Diff anzeigen). Nach demselben Muster landet die yazi-Config (`yazi/yazi.toml`, Markdown-Vorschau via `glow`) unter `~/.config/yazi/yazi.toml`; das dafür nötige Plugin `piper` wird per `ya pkg` installiert (ist es bereits in `package.toml` eingetragen, stellt `ya pkg install` nur fehlende Dateien wieder her). Die Catppuccin-Themes (`micro/colorschemes/*.micro`, Standard: `catppuccin-macchiato`, siehe `settings.json`) landen unverändert unter `~/.config/micro/colorschemes/` — reine Vendor-Dateien ohne Merge-Logik, werden bei jedem Lauf überschrieben. Schlägt die Installation eines Tools fehl, laufen die übrigen weiter; am Ende listet das Script alle Fehler auf, bei manchen (z. B. `micro`) inklusive kurzem Grund in Klammern.
 
 Das Bootstrap-Script ist idempotent: erneutes Ausführen aktualisiert Tools, Configs und Cheatsheets, ohne Bestehendes zu zerstören.
 
@@ -55,6 +56,7 @@ Das Bootstrap-Script ist idempotent: erneutes Ausführen aktualisiert Tools, Con
 | `vim`/`nano` | `micro` | `pacman -S micro` / `apt install micro`; schlägt das fehl: bereits installiertes Flatpak (`io.github.zyedidia.micro`) oder Snap (`--classic`), sonst Flatpak-Nachinstallation | `micro`; als `$EDITOR` gesetzt (von yazi genutzt). Bei Flatpak-Fallback ruft ein Wrapper in `~/.local/bin/micro` `flatpak run` auf |
 | — | `neovim` (weiterhin verfügbar) | `pacman -S neovim` / `apt install neovim` | `nvim`, Alias `vim=nvim`; nicht mehr `$EDITOR` |
 | `tail -f`/`less` (Logs) | `lnav` | `pacman -S lnav` / `apt install lnav` | `lnav /var/log/…`; erkennt Log-Formate automatisch, Zeitleiste, SQL-Abfragen auf Logs |
+| Markdown lesen | `glow` | `pacman -S glow` / `apt install glow` (sonst Charm-APT-Repo `repo.charm.sh`) | `glow README.md` (gerendert), `glow -p README.md` (Pager), `glow` ohne Argument: TUI mit Dateibrowser; in yazi als Markdown-Vorschau |
 
 ### yazi im Detail
 
@@ -64,7 +66,7 @@ yazi ist ein asynchroner TUI-Dateimanager (Rust) im Miller-Spalten-Layout (paren
 Kopieren (`y`), Ausschneiden (`x`), Einfügen (`p`), Löschen (`d`), Umbenennen (`r`) direkt in der TUI. Mehrfachauswahl mit `Space`, Bulk-Rename öffnet alle markierten Namen im `$EDITOR`. Tabs (`t`), alle I/O-Operationen laufen asynchron — große Verzeichnisse blockieren nicht.
 
 **Vorschau**
-Bildvorschau nativ via Kitty-Protokoll, iTerm2, Sixel oder Überzug++. Code-Dateien mit Syntax-Highlighting, Archive, PDFs und Videos (Thumbnails via ffmpeg) werden ebenfalls gerendert.
+Bildvorschau nativ via Kitty-Protokoll, iTerm2, Sixel oder Überzug++. Markdown wird gerendert via `glow` (Plugin `piper`), Code-Dateien mit Syntax-Highlighting, Archive, PDFs und Videos (Thumbnails via ffmpeg) werden ebenfalls gerendert.
 
 **Suche & Navigation**
 `s` sucht Dateinamen via `fd`, `S` Datei**inhalte** via `rg` — Ergebnisse erscheinen als virtuelles Verzeichnis. `z` springt per zoxide, `Z` per fzf. Für großflächige Codesuche bleibt `rg` direkt überlegen.
@@ -105,6 +107,8 @@ micro/
     catppuccin-frappe.micro
     catppuccin-macchiato.micro
     catppuccin-mocha.micro
+yazi/
+  yazi.toml        ← yazi-Config, Markdown-Vorschau via glow (→ ~/.config/yazi/yazi.toml)
 cheatsheets/
   cheat            ← fzf-Wrapper (→ ~/.local/bin/cheat)
   sheets/          ← Cheatsheet-Inhalte (→ ~/.local/share/cheatsheets/)

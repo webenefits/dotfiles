@@ -1,0 +1,7 @@
+# dotfiles: yazi-Config (→ ~/.config/yazi/yazi.toml)
+# Wird mit den yazi-Defaults zusammengeführt, enthält daher nur Abweichungen.
+
+# Markdown gerendert via glow (Plugin: yazi-rs/plugins:piper)
+[[plugin.prepend_previewers]]
+url = "*.md"
+run = 'piper -- CLICOLOR_FORCE=1 glow -w=$w -s=dark "$1"'
