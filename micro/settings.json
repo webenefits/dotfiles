@@ -3,5 +3,14 @@
     "tabsize": 4,
     "tabstospaces": true,
     "softwrap": true,
-    "colorscheme": "catppuccin-macchiato"
+    "colorscheme": "catppuccin-macchiato",
+    "ft:makefile": {
+        "tabstospaces": false
+    },
+    "ft:go": {
+        "tabstospaces": false
+    },
+    "ft:yaml": {
+        "tabsize": 2
+    }
 }

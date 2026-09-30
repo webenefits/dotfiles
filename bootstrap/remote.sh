@@ -446,6 +446,27 @@ install_micro_syntax() {
     curl -fsSL "$DOTFILES_RAW/micro/syntax/default.yaml" -o "$HOME/.config/micro/syntax/default.yaml" || return 1
 }
 
+# micro-Plugin editorconfig: eine .editorconfig im Projekt übersteuert die
+# globalen Einrückungs-Defaults aus settings.json. Idempotent: bereits
+# installiert -> nur aktualisieren. micro meldet Fehler nicht zuverlässig per
+# Exit-Code, daher danach auf das Plugin-Verzeichnis prüfen.
+install_micro_editorconfig() {
+    local plug="$HOME/.config/micro/plug/editorconfig"
+    if ! command -v micro &>/dev/null; then
+        LAST_TRY_REASON="micro nicht gefunden"
+        return 1
+    fi
+    if [ -d "$plug" ]; then
+        micro -plugin update editorconfig || return 1
+    else
+        micro -plugin install editorconfig || return 1
+    fi
+    if [ ! -d "$plug" ]; then
+        LAST_TRY_REASON="Plugin-Verzeichnis fehlt nach Installation"
+        return 1
+    fi
+}
+
 # micro-Wrapper aus einem früheren Flatpak-Fallback-Lauf (User-Modus) entfernen,
 # sobald ein anderes micro im PATH liegt (natives Paket, Snap oder systemweiter
 # Wrapper) -- ~/.local/bin steht in PATH vorne und würde es sonst überdecken.
@@ -520,6 +541,9 @@ user_setup() {
     echo "==> micro-Syntax (Fallback-Highlighting) installieren"
     try "micro-syntax" install_micro_syntax
 
+    echo "==> micro-Plugin editorconfig installieren"
+    try "micro-editorconfig" install_micro_editorconfig
+
     # yazi-Config (Markdown-Vorschau via glow), gleiche Update-Logik wie micro
     echo "==> yazi-Config einbinden"
     try "yazi-config" install_managed_file yazi/yazi.toml "$HOME/.config/yazi/yazi.toml" yazi.toml
@@ -544,7 +568,8 @@ user_setup() {
 # Abhängigkeiten in ein temporäres Script serialisiert und mit leerer Umgebung
 # gestartet (sonst würden HOME/XDG_* des aufrufenden Users durchschlagen).
 USER_SETUP_FUNCS=(try add_import install_shell_config install_nvim_config install_managed_file
-    install_micro_colorschemes install_micro_syntax is_micro_flatpak_wrapper cleanup_micro_wrapper
+    install_micro_colorschemes install_micro_syntax install_micro_editorconfig
+    is_micro_flatpak_wrapper cleanup_micro_wrapper
     install_yazi_piper install_cheat user_setup)
 USER_SETUP_VARS=(DOTFILES_RAW MARK_START MARK_END MARK_LEGACY MICRO_COLORSCHEMES CHEAT_SHEETS)
 SAFE_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
