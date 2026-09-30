@@ -1,0 +1,8 @@
+# dotfiles: yazi-Keymap (→ ~/.config/yazi/keymap.toml)
+# prepend_keymap ergänzt die yazi-Defaults, statt sie zu ersetzen.
+
+# Vorschau auf Vollbild schalten und zurück (Plugin: yazi-rs/plugins:toggle-pane)
+[[mgr.prepend_keymap]]
+on   = "T"
+run  = "plugin toggle-pane max-preview"
+desc = "Maximize or restore the preview pane"

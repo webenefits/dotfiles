@@ -483,18 +483,26 @@ cleanup_micro_wrapper() {
     done
 }
 
-# piper-Plugin für die glow-Vorschau. Idempotent: steht das Plugin bereits in
-# package.toml, stellt "ya pkg install" nur fehlende Dateien wieder her, statt
-# es erneut hinzuzufügen.
-install_yazi_piper() {
+# yazi-Plugins: piper (glow-Vorschau für Markdown), toggle-pane (Vorschau im
+# Vollbild, Taste T in keymap.toml). Idempotent: nur Plugins, die noch nicht
+# in package.toml stehen, werden per "ya pkg add" hinzugefügt; für bereits
+# eingetragene stellt "ya pkg install" nur fehlende Dateien wieder her.
+YAZI_PLUGINS=(yazi-rs/plugins:piper yazi-rs/plugins:toggle-pane)
+install_yazi_plugins() {
+    local pkg_toml="$HOME/.config/yazi/package.toml" p have_existing=0
     if ! command -v ya &>/dev/null; then
         LAST_TRY_REASON="ya nicht gefunden"
         return 1
     fi
-    if grep -qF 'yazi-rs/plugins:piper' "$HOME/.config/yazi/package.toml" 2>/dev/null; then
-        ya pkg install
-    else
-        ya pkg add yazi-rs/plugins:piper
+    for p in "${YAZI_PLUGINS[@]}"; do
+        if grep -qF "\"$p\"" "$pkg_toml" 2>/dev/null; then
+            have_existing=1
+        else
+            ya pkg add "$p" || return 1
+        fi
+    done
+    if [ "$have_existing" -eq 1 ]; then
+        ya pkg install || return 1
     fi
 }
 
@@ -548,8 +556,11 @@ user_setup() {
     echo "==> yazi-Config einbinden"
     try "yazi-config" install_managed_file yazi/yazi.toml "$HOME/.config/yazi/yazi.toml" yazi.toml
 
-    echo "==> yazi-Plugin piper installieren"
-    try "yazi-piper" install_yazi_piper
+    echo "==> yazi-Keymap einbinden"
+    try "yazi-keymap" install_managed_file yazi/keymap.toml "$HOME/.config/yazi/keymap.toml" yazi-keymap.toml
+
+    echo "==> yazi-Plugins installieren (${YAZI_PLUGINS[*]})"
+    try "yazi-plugins" install_yazi_plugins
 
     echo "==> cheat-Wrapper & Cheatsheets installieren"
     try "cheat" install_cheat
@@ -570,8 +581,8 @@ user_setup() {
 USER_SETUP_FUNCS=(try add_import install_shell_config install_nvim_config install_managed_file
     install_micro_colorschemes install_micro_syntax install_micro_editorconfig
     is_micro_flatpak_wrapper cleanup_micro_wrapper
-    install_yazi_piper install_cheat user_setup)
-USER_SETUP_VARS=(DOTFILES_RAW MARK_START MARK_END MARK_LEGACY MICRO_COLORSCHEMES CHEAT_SHEETS)
+    install_yazi_plugins install_cheat user_setup)
+USER_SETUP_VARS=(DOTFILES_RAW MARK_START MARK_END MARK_LEGACY MICRO_COLORSCHEMES YAZI_PLUGINS CHEAT_SHEETS)
 SAFE_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
 
 write_user_setup_script() {
