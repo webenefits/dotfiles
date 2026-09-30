@@ -17,6 +17,12 @@ else
     SUDO=""
 fi
 
+# /dev/tty tatsächlich öffnen statt nur -r zu prüfen: das Device existiert
+# auch ohne Controlling Terminal (z. B. CI, cron), ist dann aber nicht nutzbar
+has_tty() {
+    { : < /dev/tty; } 2>/dev/null
+}
+
 # Paketmanager erkennen
 if command -v pacman &>/dev/null; then
     DISTRO="arch"
@@ -48,19 +54,23 @@ if [ "$SCOPE" = system ] && [ "$CAN_SYSTEM" -eq 0 ]; then
     echo "==> --system braucht root oder sudo, nutze User-Modus" >&2
     SCOPE="user"
 fi
+# Default: systemweit, sofern root/sudo verfügbar -- auch ohne Terminal
 if [ -z "$SCOPE" ]; then
     SCOPE="user"
-    if [ "$CAN_SYSTEM" -eq 1 ] && [ -r /dev/tty ]; then
-        echo "==> Configs für wen einrichten?" >&2
-        echo "    User:   nur für $(id -un) ($HOME)." >&2
-        echo "    System: für root, alle lokalen Login-User und /etc/skel (neue User)." >&2
-        printf "    [u] User  [s] System  (Enter = User) > " >&2
-        if read -r ANSWER < /dev/tty 2>/dev/null; then
-            case "$ANSWER" in
-                [sS]) SCOPE="system" ;;
-                [uU]|"") SCOPE="user" ;;
-                *) echo "    Ungültige Eingabe, nutze Default: user" >&2 ;;
-            esac
+    if [ "$CAN_SYSTEM" -eq 1 ]; then
+        SCOPE="system"
+        if has_tty; then
+            echo "==> Configs für wen einrichten?" >&2
+            echo "    System: für root, alle lokalen Login-User und /etc/skel (neue User)." >&2
+            echo "    User:   nur für $(id -un) ($HOME)." >&2
+            printf "    [s] System  [u] User  (Enter = System) > " >&2
+            if read -r ANSWER 2>/dev/null < /dev/tty; then
+                case "$ANSWER" in
+                    [sS]|"") SCOPE="system" ;;
+                    [uU]) SCOPE="user" ;;
+                    *) echo "    Ungültige Eingabe, nutze Default: system" >&2 ;;
+                esac
+            fi
         fi
     fi
 fi
@@ -77,12 +87,12 @@ if [ "$DISTRO" = debian ]; then
     systemctl get-default 2>/dev/null | grep -q graphical && DEFAULT_MODE="client"
 
     MODE="$DEFAULT_MODE"
-    if [ -r /dev/tty ]; then
+    if has_tty; then
         echo "==> System: Server oder Client?" >&2
         echo "    Server: schlank, ohne Vorschau-Tools (kein ffmpeg/imagemagick/poppler-utils/7zip)." >&2
         echo "    Client: mit Vorschau-Tools für Bilder/Videos/PDFs/Archive in yazi." >&2
         printf "    [s] Server  [c] Client  (Enter = erkannter Default: %s) > " "$DEFAULT_MODE" >&2
-        if read -r ANSWER < /dev/tty 2>/dev/null; then
+        if read -r ANSWER 2>/dev/null < /dev/tty; then
             case "$ANSWER" in
                 [sS]) MODE="server" ;;
                 [cC]) MODE="client" ;;
@@ -413,7 +423,7 @@ install_managed_file() {
     local choice
     while true; do
         echo "  [r] Repo-Version übernehmen  [l] lokale Version behalten  [d] Diff anzeigen" >&2
-        if ! read -r choice < /dev/tty 2>/dev/null; then
+        if ! read -r choice 2>/dev/null < /dev/tty; then
             echo "  kein Terminal verfügbar, behalte lokale Version" >&2
             choice=l
         fi

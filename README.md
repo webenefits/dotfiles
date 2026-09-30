@@ -12,7 +12,7 @@ curl -sL https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main/b
 
 ### Nur für mich oder systemweit
 
-Pakete werden immer systemweit installiert. Für die User-Configs (Shell, nvim, micro, yazi, cheat, tldr-Cache) fragt das Script beim Start nach dem Umfang, sofern root- oder sudo-Rechte vorhanden sind (Default: User):
+Pakete werden immer systemweit installiert. Für die User-Configs (Shell, nvim, micro, yazi, cheat, tldr-Cache) fragt das Script beim Start nach dem Umfang, sofern root- oder sudo-Rechte vorhanden sind (Default: System, auch ohne Terminal; ohne root/sudo immer User):
 
 | Modus | Wirkung |
 |-------|---------|
