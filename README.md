@@ -10,6 +10,23 @@ Einmalig ausführen — das Script erkennt den Paketmanager (`apt`/`pacman`) aut
 curl -sL https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main/bootstrap/remote.sh | bash
 ```
 
+### Nur für mich oder systemweit
+
+Pakete werden immer systemweit installiert. Für die User-Configs (Shell, nvim, micro, yazi, cheat, tldr-Cache) fragt das Script beim Start nach dem Umfang, sofern root- oder sudo-Rechte vorhanden sind (Default: User):
+
+| Modus | Wirkung |
+|-------|---------|
+| User | Configs nur im eigenen `$HOME` |
+| System | Configs für root, alle lokalen Login-User (UID `UID_MIN`–`UID_MAX` aus `/etc/login.defs`, echte Login-Shell, existierendes Home) und `/etc/skel`, damit künftig angelegte User sie automatisch mitbekommen |
+
+Ohne Rückfrage per Flag:
+
+```bash
+curl -sL https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main/bootstrap/remote.sh | bash -s -- --system   # bzw. --user
+```
+
+Im System-Modus läuft der User-Teil für jeden User **als dieser User** (`sudo -u` bzw. `runuser`) mit leerer Umgebung, sodass alle angelegten Dateien ihm gehören und die Configs dieselbe Struktur haben wie im User-Modus. Beide Modi sind beliebig kombinier- und wiederholbar: ein erneuter Lauf zieht Änderungen nach, ersetzt die bestehenden Marker-Blöcke und legt nichts doppelt an. Fehler werden am Ende pro User aufgelistet (`<user>: <schritt>`). Hinweis: `/etc/skel/.bashrc` ist auf Debian/Ubuntu eine Paket-Conffile, dpkg fragt bei einem bash-Update mit geänderter Vorlage daher ggf. nach.
+
 ### Was installiert wird
 
 Auf Arch/CachyOS liegen alle Tools in den offiziellen Repos (`pacman`). Auf Debian/Ubuntu sind einige apt-Versionen zu alt (yazi, fzf, chafa) und werden als Binary bezogen.
@@ -53,7 +70,7 @@ Das Bootstrap-Script ist idempotent: erneutes Ausführen aktualisiert Tools, Con
 | `cd` | `zoxide` | `pacman -S zoxide` / `apt install zoxide` | `z <pattern>`, `zi`; Init: bash `eval "$(zoxide init bash)"`, fish `zoxide init fish \| source` |
 | `man` | `tldr` | `pacman -S tealdeer` / `apt install tealdeer` (Binary `tldr`) | `tldr <command>`, `tldr --update` |
 | Bildvorschau (yazi) | `chafa` | `pacman -S chafa` / Debian/Ubuntu: statisches Binary von hpjansson.org (apt-Version < 1.16 kennt yazis `--probe` nicht) | Fallback-Adapter für yazi ohne Kitty-/Sixel-Grafik |
-| `vim`/`nano` | `micro` | `pacman -S micro` / `apt install micro`; schlägt das fehl: bereits installiertes Flatpak (`io.github.zyedidia.micro`) oder Snap (`--classic`), sonst Flatpak-Nachinstallation | `micro`; als `$EDITOR` gesetzt (von yazi genutzt). Bei Flatpak-Fallback ruft ein Wrapper in `~/.local/bin/micro` `flatpak run` auf |
+| `vim`/`nano` | `micro` | `pacman -S micro` / `apt install micro`; schlägt das fehl: bereits installiertes Flatpak (`io.github.zyedidia.micro`) oder Snap (`--classic`), sonst Flatpak-Nachinstallation | `micro`; als `$EDITOR` gesetzt (von yazi genutzt). Bei Flatpak-Fallback ruft ein Wrapper in `~/.local/bin/micro` (System-Modus: `/usr/local/bin/micro`) `flatpak run` auf |
 | — | `neovim` (weiterhin verfügbar) | `pacman -S neovim` / `apt install neovim` | `nvim`, Alias `vim=nvim`; nicht mehr `$EDITOR` |
 | `tail -f`/`less` (Logs) | `lnav` | `pacman -S lnav` / `apt install lnav` | `lnav /var/log/…`; erkennt Log-Formate automatisch, Zeitleiste, SQL-Abfragen auf Logs |
 | Markdown lesen | `glow` | `pacman -S glow` / `apt install glow` (sonst Charm-APT-Repo `repo.charm.sh`) | `glow README.md` (gerendert), `glow -p README.md` (Pager), `glow` ohne Argument: TUI mit Dateibrowser; in yazi als Markdown-Vorschau |

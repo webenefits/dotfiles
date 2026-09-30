@@ -3,8 +3,8 @@
 # Schritt bricht das Script nicht ab — am Ende folgt eine Zusammenfassung.
 set -uo pipefail
 
-DOTFILES_RAW="https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main"
-CONFIG_DIR="$HOME/.config/dotfiles"
+# per Env übersteuerbar, z. B. für Forks oder lokale Tests (file://…)
+DOTFILES_RAW="${DOTFILES_RAW:-https://raw.githubusercontent.com/webenefits/dotfiles/refs/heads/main}"
 
 # chafa: apt-Versionen (Debian 12: 1.12, Ubuntu 24.04: 1.14) kennen die von
 # yazi genutzte Option --probe nicht (erst ab 1.16). Statisches Binary pinnen.
@@ -26,6 +26,45 @@ else
     echo "Nicht unterstützte Distribution (weder pacman noch apt-get gefunden)." >&2
     exit 1
 fi
+
+# --- Umfang: nur aktueller User oder systemweit ---
+# Pakete sind immer systemweit. Die User-Configs (Shell, nvim, micro, yazi,
+# cheat, tldr) landen im User-Modus nur im eigenen $HOME, im System-Modus
+# zusätzlich bei root, allen lokalen Login-Usern und in /etc/skel (für künftig
+# angelegte User). Ohne Rückfrage: curl … | bash -s -- --system  (bzw. --user)
+SCOPE=""
+for arg in "$@"; do
+    case "$arg" in
+        --system) SCOPE="system" ;;
+        --user)   SCOPE="user" ;;
+        *) echo "Unbekannte Option: $arg (erlaubt: --user, --system)" >&2; exit 1 ;;
+    esac
+done
+CAN_SYSTEM=0
+if [ "$(id -u)" -eq 0 ] || [ -n "$SUDO" ]; then
+    CAN_SYSTEM=1
+fi
+if [ "$SCOPE" = system ] && [ "$CAN_SYSTEM" -eq 0 ]; then
+    echo "==> --system braucht root oder sudo, nutze User-Modus" >&2
+    SCOPE="user"
+fi
+if [ -z "$SCOPE" ]; then
+    SCOPE="user"
+    if [ "$CAN_SYSTEM" -eq 1 ] && [ -r /dev/tty ]; then
+        echo "==> Configs für wen einrichten?" >&2
+        echo "    User:   nur für $(id -un) ($HOME)." >&2
+        echo "    System: für root, alle lokalen Login-User und /etc/skel (neue User)." >&2
+        printf "    [u] User  [s] System  (Enter = User) > " >&2
+        if read -r ANSWER < /dev/tty 2>/dev/null; then
+            case "$ANSWER" in
+                [sS]) SCOPE="system" ;;
+                [uU]|"") SCOPE="user" ;;
+                *) echo "    Ungültige Eingabe, nutze Default: user" >&2 ;;
+            esac
+        fi
+    fi
+fi
+echo "    → Umfang: $SCOPE"
 
 # --- Server/Client-Modus (nur relevant für Debian/Ubuntu) ---
 # apt installiert "Recommends" standardmäßig mit. Bei yazi zieht das die
@@ -115,30 +154,43 @@ done
 # micro: darf praktisch nicht fehlschlagen, daher mehrstufiger Fallback.
 # 1) natives Distro-Paket, 2) bereits installiertes Flatpak, 3) bereits
 # installiertes Snap, 4) Flatpak selbst nachinstallieren und darüber micro
-# ziehen. Bei Flatpak-Installation wird ein "micro"-Wrapper nach
-# ~/.local/bin gelegt, da Flatpak-Apps sonst nur über "flatpak run <id>"
-# erreichbar sind (Snap legt seinen Binary-Symlink bereits selbst unter
+# ziehen. Bei Flatpak-Installation wird ein "micro"-Wrapper angelegt, da
+# Flatpak-Apps sonst nur über "flatpak run <id>" erreichbar sind: im User-Modus
+# per --user nach ~/.local/bin, im System-Modus per --system nach
+# /usr/local/bin (Snap legt seinen Binary-Symlink bereits selbst unter
 # /snap/bin ab).
 MICRO_FLATPAK_ID="io.github.zyedidia.micro"
+MICRO_SYSTEM_WRAPPER="/usr/local/bin/micro"
+is_micro_flatpak_wrapper() {
+    [ -f "$1" ] && grep -q "flatpak run" "$1" 2>/dev/null
+}
 install_micro_flatpak_wrapper() {
-    mkdir -p "$HOME/.local/bin" || return 1
+    local target="$1" sudo="${2:-}"
+    $sudo mkdir -p "$(dirname "$target")" || return 1
     printf '#!/usr/bin/env sh\nexec flatpak run %s "$@"\n' "$MICRO_FLATPAK_ID" \
-        > "$HOME/.local/bin/micro" || return 1
-    chmod +x "$HOME/.local/bin/micro"
+        | $sudo tee "$target" > /dev/null || return 1
+    $sudo chmod 755 "$target"
 }
 install_micro_via_flatpak() {
-    flatpak remote-add --user --if-not-exists flathub \
-        https://dl.flathub.org/repo/flathub.flatpakrepo || return 1
-    flatpak install --user -y --noninteractive flathub "$MICRO_FLATPAK_ID" || return 1
-    install_micro_flatpak_wrapper
+    if [ "$SCOPE" = system ]; then
+        $SUDO flatpak remote-add --system --if-not-exists flathub \
+            https://dl.flathub.org/repo/flathub.flatpakrepo || return 1
+        $SUDO flatpak install --system -y --noninteractive flathub "$MICRO_FLATPAK_ID" || return 1
+        install_micro_flatpak_wrapper "$MICRO_SYSTEM_WRAPPER" "$SUDO"
+    else
+        flatpak remote-add --user --if-not-exists flathub \
+            https://dl.flathub.org/repo/flathub.flatpakrepo || return 1
+        flatpak install --user -y --noninteractive flathub "$MICRO_FLATPAK_ID" || return 1
+        install_micro_flatpak_wrapper "$HOME/.local/bin/micro"
+    fi
 }
 install_micro() {
     if pkg_install micro; then
-        # Wrapper aus einem früheren Flatpak-Fallback-Lauf entfernen -- ~/.local/bin
-        # steht in PATH vor /usr/bin und würde das native Paket sonst weiter
-        # überdecken (gleiches Muster wie beim yazi-Fallback weiter unten).
-        if [ -f "$HOME/.local/bin/micro" ] && grep -q "flatpak run" "$HOME/.local/bin/micro" 2>/dev/null; then
-            rm -f "$HOME/.local/bin/micro"
+        # systemweiten Wrapper aus einem früheren Flatpak-Fallback-Lauf entfernen --
+        # /usr/local/bin steht in PATH vor /usr/bin und würde das native Paket sonst
+        # überdecken. User-Wrapper in ~/.local/bin räumt user_setup pro User auf.
+        if is_micro_flatpak_wrapper "$MICRO_SYSTEM_WRAPPER"; then
+            $SUDO rm -f "$MICRO_SYSTEM_WRAPPER"
         fi
         return 0
     fi
@@ -259,6 +311,13 @@ if [ "$DISTRO" = debian ]; then
     try "glow" install_glow
 fi
 
+# --- User-Configs ---
+# Alles ab hier betrifft nur $HOME und läuft gesammelt in user_setup: im
+# User-Modus einmal für den aktuellen User, im System-Modus für jeden
+# Ziel-User (siehe setup_all_users weiter unten). Sämtliche Schritte sind
+# idempotent — erneute Läufe ersetzen bestehende Blöcke/Dateien, statt sie
+# zu duplizieren.
+
 # Shell-Configs herunterladen und per source einbinden (idempotent).
 MARK_START="# --- dotfiles ---"
 MARK_END="# --- dotfiles: end ---"
@@ -301,8 +360,6 @@ install_shell_config() {
             'test -f "$HOME/.config/dotfiles/config.fish"; and source "$HOME/.config/dotfiles/config.fish"' || return 1
     fi
 }
-echo "==> Shell-Config einbinden"
-try "shell-config" install_shell_config
 
 # nvim-Config herunterladen und per dofile einbinden (analog zu den Shell-Configs)
 install_nvim_config() {
@@ -318,8 +375,6 @@ install_nvim_config() {
         'pcall(dofile, os.getenv("HOME") .. "/.config/dotfiles/nvim.lua")' \
         "-- --- dotfiles ---" "-- --- dotfiles: end ---"
 }
-echo "==> nvim-Config einbinden"
-try "nvim-config" install_nvim_config
 
 # Einzelne Config-Dateien ohne Import-Mechanismus (micro, yazi): Whole-File-
 # Vergleich gegen den zuletzt bekannten Repo-Stand ($CONFIG_DIR/<managed>).
@@ -371,8 +426,6 @@ install_managed_file() {
     done
     mv "$tmp" "$managed"
 }
-echo "==> micro-Config einbinden"
-try "micro-config" install_managed_file micro/settings.json "$HOME/.config/micro/settings.json" micro-settings.json
 
 # micro-Colorschemes: reine Vendor-Dateien ohne lokale Anpassung, daher immer
 # überschreiben (kein Merge nötig). Verzeichnis wird nicht komplett neu aufgebaut,
@@ -385,8 +438,6 @@ install_micro_colorschemes() {
         curl -fsSL "$DOTFILES_RAW/micro/colorschemes/$c.micro" -o "$HOME/.config/micro/colorschemes/$c.micro" || return 1
     done
 }
-echo "==> micro-Colorschemes installieren"
-try "micro-colorschemes" install_micro_colorschemes
 
 # micro-Syntax (Fallback-Highlighting für Dateien ohne bekannte Zuordnung):
 # reine Vendor-Datei ohne lokale Anpassung, daher immer überschreiben.
@@ -394,12 +445,22 @@ install_micro_syntax() {
     mkdir -p "$HOME/.config/micro/syntax" || return 1
     curl -fsSL "$DOTFILES_RAW/micro/syntax/default.yaml" -o "$HOME/.config/micro/syntax/default.yaml" || return 1
 }
-echo "==> micro-Syntax (Fallback-Highlighting) installieren"
-try "micro-syntax" install_micro_syntax
 
-# yazi-Config (Markdown-Vorschau via glow), gleiche Update-Logik wie micro
-echo "==> yazi-Config einbinden"
-try "yazi-config" install_managed_file yazi/yazi.toml "$HOME/.config/yazi/yazi.toml" yazi.toml
+# micro-Wrapper aus einem früheren Flatpak-Fallback-Lauf (User-Modus) entfernen,
+# sobald ein anderes micro im PATH liegt (natives Paket, Snap oder systemweiter
+# Wrapper) -- ~/.local/bin steht in PATH vorne und würde es sonst überdecken.
+cleanup_micro_wrapper() {
+    local wrapper="$HOME/.local/bin/micro" dir
+    is_micro_flatpak_wrapper "$wrapper" || return 0
+    local IFS=:
+    for dir in $PATH; do
+        [ "$dir" = "$HOME/.local/bin" ] && continue
+        if [ -x "$dir/micro" ]; then
+            rm -f "$wrapper"
+            return 0
+        fi
+    done
+}
 
 # piper-Plugin für die glow-Vorschau. Idempotent: steht das Plugin bereits in
 # package.toml, stellt "ya pkg install" nur fehlende Dateien wieder her, statt
@@ -415,8 +476,6 @@ install_yazi_piper() {
         ya pkg add yazi-rs/plugins:piper
     fi
 }
-echo "==> yazi-Plugin piper installieren"
-try "yazi-piper" install_yazi_piper
 
 # cheat-Wrapper (~/.local/bin) und Cheatsheets ($XDG_DATA_HOME/cheatsheets) installieren.
 # Neue Sheets hier ergänzen (HTTP bietet kein Verzeichnislisting).
@@ -438,14 +497,150 @@ install_cheat() {
         curl -fsSL "$DOTFILES_RAW/cheatsheets/sheets/$s.md" -o "$sheet_dir/$s.md" || return 1
     done
 }
-echo "==> cheat-Wrapper & Cheatsheets installieren"
-try "cheat" install_cheat
 
-# tldr-Cache füllen, damit der erste Aufruf ohne Nachladen funktioniert.
-# Nur wenn tealdeer erfolgreich installiert wurde.
-if command -v tldr &>/dev/null; then
-    echo "==> tldr-Cache aktualisieren"
-    try "tldr-cache" tldr --update
+# alle User-Schritte für $HOME; mit --skel für /etc/skel (ohne tldr-Cache,
+# der gehört nicht in die Vorlage für neue User)
+user_setup() {
+    CONFIG_DIR="$HOME/.config/dotfiles"
+
+    cleanup_micro_wrapper
+
+    echo "==> Shell-Config einbinden"
+    try "shell-config" install_shell_config
+
+    echo "==> nvim-Config einbinden"
+    try "nvim-config" install_nvim_config
+
+    echo "==> micro-Config einbinden"
+    try "micro-config" install_managed_file micro/settings.json "$HOME/.config/micro/settings.json" micro-settings.json
+
+    echo "==> micro-Colorschemes installieren"
+    try "micro-colorschemes" install_micro_colorschemes
+
+    echo "==> micro-Syntax (Fallback-Highlighting) installieren"
+    try "micro-syntax" install_micro_syntax
+
+    # yazi-Config (Markdown-Vorschau via glow), gleiche Update-Logik wie micro
+    echo "==> yazi-Config einbinden"
+    try "yazi-config" install_managed_file yazi/yazi.toml "$HOME/.config/yazi/yazi.toml" yazi.toml
+
+    echo "==> yazi-Plugin piper installieren"
+    try "yazi-piper" install_yazi_piper
+
+    echo "==> cheat-Wrapper & Cheatsheets installieren"
+    try "cheat" install_cheat
+
+    # tldr-Cache füllen, damit der erste Aufruf ohne Nachladen funktioniert.
+    # Nur wenn tealdeer erfolgreich installiert wurde.
+    if [ "${1:-}" != --skel ] && command -v tldr &>/dev/null; then
+        echo "==> tldr-Cache aktualisieren"
+        try "tldr-cache" tldr --update
+    fi
+}
+
+# --- System-Modus: user_setup für alle Ziel-User ---
+# Jeder User wird als er selbst bedient (sudo -u / runuser), damit alle
+# angelegten Dateien und Verzeichnisse ihm gehören. user_setup wird dafür samt
+# Abhängigkeiten in ein temporäres Script serialisiert und mit leerer Umgebung
+# gestartet (sonst würden HOME/XDG_* des aufrufenden Users durchschlagen).
+USER_SETUP_FUNCS=(try add_import install_shell_config install_nvim_config install_managed_file
+    install_micro_colorschemes install_micro_syntax is_micro_flatpak_wrapper cleanup_micro_wrapper
+    install_yazi_piper install_cheat user_setup)
+USER_SETUP_VARS=(DOTFILES_RAW MARK_START MARK_END MARK_LEGACY MICRO_COLORSCHEMES CHEAT_SHEETS)
+SAFE_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+
+write_user_setup_script() {
+    {
+        echo 'set -uo pipefail'
+        echo 'cd "$HOME" 2>/dev/null || cd /'
+        declare -p "${USER_SETUP_VARS[@]}"
+        declare -f "${USER_SETUP_FUNCS[@]}"
+        echo 'FAILED=(); LAST_TRY_REASON=""'
+        echo 'user_setup "$@"'
+        # Fehler über stdout an den aufrufenden Prozess zurückmelden
+        echo 'for f in "${FAILED[@]}"; do printf "__FAILED__:%s\n" "$f"; done'
+    } > "$1" && chmod 644 "$1"
+}
+
+# lokale Login-User: root + UID_MIN..UID_MAX, mit echter Shell und
+# existierendem Home. Ausgabe: <name>:<home>
+list_login_users() {
+    local uid_min uid_max name uid home shell
+    uid_min="$(awk '$1 == "UID_MIN" { print $2 }' /etc/login.defs 2>/dev/null)"
+    uid_max="$(awk '$1 == "UID_MAX" { print $2 }' /etc/login.defs 2>/dev/null)"
+    : "${uid_min:=1000}" "${uid_max:=60000}"
+    while IFS=: read -r name _ uid _ _ home shell; do
+        [ "$uid" -eq 0 ] || { [ "$uid" -ge "$uid_min" ] && [ "$uid" -le "$uid_max" ]; } || continue
+        case "$shell" in ""|*/nologin|*/false) continue ;; esac
+        [ -d "$home" ] || continue
+        printf '%s:%s\n' "$name" "$home"
+    done < /etc/passwd
+}
+
+# startet das serialisierte user_setup als <user> mit HOME=<home>
+# Args: <user> <home> <script> [env-Zuweisungen...] [-- user_setup-Args...]
+run_user_setup() {
+    local user="$1" home="$2" script="$3"; shift 3
+    local -a envs=()
+    while [ $# -gt 0 ] && [ "$1" != -- ]; do envs+=("$1"); shift; done
+    [ "${1:-}" = -- ] && shift
+    local -a cmd=(env -i HOME="$home" USER="$user" LOGNAME="$user" PATH="$SAFE_PATH"
+        TERM="${TERM:-dumb}" LANG="${LANG:-C.UTF-8}" "${envs[@]}" bash "$script" "$@")
+    if [ "$user" = "$(id -un)" ]; then
+        "${cmd[@]}"
+    elif [ "$(id -u)" -eq 0 ]; then
+        runuser -u "$user" -- "${cmd[@]}"
+    else
+        sudo -u "$user" -- "${cmd[@]}"
+    fi
+}
+
+# user_setup für einen Ziel-User, Fehler landen mit Präfix in FAILED.
+# Args: <label> + Args von run_user_setup
+collect_user_setup() {
+    local label="$1" user="$2" home="$3" line n i
+    # aktueller User im eigenen HOME: direkt aufrufen, eigene Umgebung behalten
+    if [ "$user" = "$(id -un)" ] && [ "$home" = "$HOME" ]; then
+        n=${#FAILED[@]}
+        user_setup
+        for ((i = n; i < ${#FAILED[@]}; i++)); do FAILED[i]="$label: ${FAILED[i]}"; done
+        return
+    fi
+    shift 3
+    while IFS= read -r line; do
+        case "$line" in
+            __FAILED__:*) FAILED+=("$label: ${line#__FAILED__:}") ;;
+            *) printf '%s\n' "$line" ;;
+        esac
+    done < <(run_user_setup "$user" "$home" "$@" < /dev/null)
+}
+
+setup_all_users() {
+    local script user home tmp_xdg
+    script="$(mktemp)" || { FAILED+=("user-setup (mktemp)"); return; }
+    write_user_setup_script "$script" || { FAILED+=("user-setup (Script)"); rm -f "$script"; return; }
+
+    while IFS=: read -r user home; do
+        echo
+        echo "######## User: $user ($home)"
+        collect_user_setup "$user" "$user" "$home" "$script"
+    done < <(list_login_users)
+
+    # /etc/skel: Vorlage, die useradd in neue Homes kopiert. Cache/State von
+    # ya pkg (Git-Checkouts) in ein Wegwerf-Verzeichnis umleiten, damit sie
+    # nicht in jedes neue Home kopiert werden.
+    echo
+    echo "######## Vorlage für neue User: /etc/skel"
+    tmp_xdg="$(mktemp -d)" && chmod 755 "$tmp_xdg"
+    collect_user_setup "skel" root /etc/skel "$script" \
+        XDG_CACHE_HOME="$tmp_xdg/cache" XDG_STATE_HOME="$tmp_xdg/state" -- --skel
+    $SUDO rm -rf "$tmp_xdg" "$script"
+}
+
+if [ "$SCOPE" = system ]; then
+    setup_all_users
+else
+    user_setup
 fi
 
 echo
@@ -464,6 +659,9 @@ if [ -f "$HOME/.zshrc" ]; then
 fi
 if command -v fish &>/dev/null || [ -f "$HOME/.config/fish/config.fish" ]; then
     echo "  fish:  source ~/.config/fish/config.fish"
+fi
+if [ "$SCOPE" = system ]; then
+    echo "Andere User erhalten die Änderungen mit ihrer nächsten Shell."
 fi
 
 if [ ${#FAILED[@]} -ne 0 ]; then
