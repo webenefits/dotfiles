@@ -494,10 +494,11 @@ cleanup_micro_wrapper() {
 }
 
 # yazi-Plugins: piper (glow-Vorschau für Markdown), toggle-pane (Vorschau im
-# Vollbild, Taste T in keymap.toml). Idempotent: nur Plugins, die noch nicht
-# in package.toml stehen, werden per "ya pkg add" hinzugefügt; für bereits
-# eingetragene stellt "ya pkg install" nur fehlende Dateien wieder her.
-YAZI_PLUGINS=(yazi-rs/plugins:piper yazi-rs/plugins:toggle-pane)
+# Vollbild, Taste T in keymap.toml), git (Git-Status in der Dateiliste, Setup
+# in init.lua). Idempotent: nur Plugins, die noch nicht in package.toml stehen,
+# werden per "ya pkg add" hinzugefügt; für bereits eingetragene stellt
+# "ya pkg install" nur fehlende Dateien wieder her.
+YAZI_PLUGINS=(yazi-rs/plugins:piper yazi-rs/plugins:toggle-pane yazi-rs/plugins:git)
 install_yazi_plugins() {
     local pkg_toml="$HOME/.config/yazi/package.toml" p have_existing=0
     if ! command -v ya &>/dev/null; then
@@ -568,6 +569,9 @@ user_setup() {
 
     echo "==> yazi-Keymap einbinden"
     try "yazi-keymap" install_managed_file yazi/keymap.toml "$HOME/.config/yazi/keymap.toml" yazi-keymap.toml
+
+    echo "==> yazi-init.lua einbinden"
+    try "yazi-init" install_managed_file yazi/init.lua "$HOME/.config/yazi/init.lua" yazi-init.lua
 
     echo "==> yazi-Plugins installieren (${YAZI_PLUGINS[*]})"
     try "yazi-plugins" install_yazi_plugins

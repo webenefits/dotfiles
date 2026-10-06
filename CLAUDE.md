@@ -36,7 +36,7 @@ DOTFILES_RAW="file://$PWD" bash bootstrap/remote.sh --user   # bzw. --system
 
 **Drei Deploy-Muster für Configs** — beim Hinzufügen einer neuen Config das passende wählen:
 1. *Import-Zeile zwischen Markern* (`add_import`): Repo-Datei nach `~/.config/dotfiles/` laden, in der RC-Datei nur eine `source`/`dofile`-Zeile zwischen `# --- dotfiles ---` / `# --- dotfiles: end ---` pflegen. Für Shell (bash/zsh/fish) und nvim.
-2. *Managed File* (`install_managed_file`): für Single-File-Configs ohne Import-Mechanismus (micro `settings.json`, yazi `yazi.toml`/`keymap.toml`). Drei-Wege-Vergleich gegen den zuletzt deployten Repo-Stand in `~/.config/dotfiles/<name>`; bei echtem Konflikt interaktive Abfrage (r/l/d).
+2. *Managed File* (`install_managed_file`): für Single-File-Configs ohne Import-Mechanismus (micro `settings.json`, yazi `yazi.toml`/`keymap.toml`/`init.lua`). Drei-Wege-Vergleich gegen den zuletzt deployten Repo-Stand in `~/.config/dotfiles/<name>`; bei echtem Konflikt interaktive Abfrage (r/l/d).
 3. *Vendor-Dateien* (micro-Colorschemes, micro-Syntax, cheat + Sheets): bei jedem Lauf überschreiben.
 
 **Dateien werden einzeln per URL geladen** (raw.githubusercontent bietet kein Listing). Neue Dateien im Repo erscheinen daher nicht automatisch auf Zielsystemen — sie müssen im Script registriert werden, z. B. `CHEAT_SHEETS`, `MICRO_COLORSCHEMES`, `YAZI_PLUGINS` oder ein neuer Schritt in `user_setup`.
