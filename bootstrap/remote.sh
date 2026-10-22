@@ -554,6 +554,9 @@ user_setup() {
     echo "==> micro-Config einbinden"
     try "micro-config" install_managed_file micro/settings.json "$HOME/.config/micro/settings.json" micro-settings.json
 
+    echo "==> micro-init.lua einbinden"
+    try "micro-init" install_managed_file micro/init.lua "$HOME/.config/micro/init.lua" micro-init.lua
+
     echo "==> micro-Colorschemes installieren"
     try "micro-colorschemes" install_micro_colorschemes
 
